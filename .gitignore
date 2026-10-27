@@ -4,3 +4,10 @@ dist
 .env.*
 !.env.example
 supabase/.temp/
+
+# Internal planning/reference material kept outside the public repository.
+*.md
+!README.md
+docs/
+UI/
+Todo.txt
