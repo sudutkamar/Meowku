@@ -2,8 +2,6 @@
 
 Meowku adalah aplikasi web untuk membantu perawatan kucing di rumah tetap rapi, terjadwal, dan mudah dikerjakan bersama.
 
-![Preview Meowku](assets/meowku-preview.png)
-
 ## Sekilas
 
 Meowku menyatukan jadwal perawatan, checklist harian, histori aktivitas, data kucing, kebutuhan litter box, katalog, laporan, anggota rumah, dan pengaturan dalam satu ruang kerja.
