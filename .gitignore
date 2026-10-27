@@ -11,3 +11,8 @@ supabase/.temp/
 docs/
 UI/
 Todo.txt
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example

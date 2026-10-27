@@ -43,8 +43,20 @@ npm run typecheck
 npm run build
 ```
 
+## Deployment
+
+Versi production saat ini tersedia di [meowku.panda-12b.workers.dev](https://meowku.panda-12b.workers.dev). Hosting memakai Cloudflare Pages versi terbaru yang berjalan di platform Workers, dengan asset statis dari folder `dist` dan fallback SPA untuk route seperti `/app`.
+
+Untuk deployment berikutnya setelah autentikasi Cloudflare:
+
+```bash
+npm run deploy
+```
+
+Perintah tersebut menjalankan build production lalu mengunggah asset ke project Cloudflare `meowku`. Variabel `VITE_*` tetap harus diisi dari environment deployment yang sesuai; jangan menaruh secret server-side di frontend.
+
 Instalasi PWA dan push notification pada HP membutuhkan alamat HTTPS yang dipercaya perangkat. `http://localhost` hanya menjadi pengecualian pada perangkat yang menjalankan server.
 
 ## Status
 
-Project ini disiapkan untuk pengembangan dan pengujian lokal. Konfigurasi backend, akun, dan data operasional sengaja tidak dipublikasikan di README.
+Project ini sudah memiliki deployment production untuk preview. Konfigurasi backend, akun, dan data operasional sengaja tidak dipublikasikan di README.
