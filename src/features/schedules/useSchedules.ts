@@ -55,7 +55,11 @@ const occurrenceKey = (householdId?: string, timezone?: string, filter?: Occurre
 const targetOptionsKey = (householdId?: string) => ['schedule-target-options', householdId];
 
 function scheduledAt(input: ScheduleInput) {
-  const time = input.time || input.slots?.[0]?.local_time || '08:00';
+  // The first active slot is the source of truth for a schedule's anchor time.
+  // `input.time` is kept for legacy records, but must not override a user-edited
+  // slot value from the schedule form.
+  const firstActiveSlot = (input.slots ?? []).find((slot) => slot.is_active !== false);
+  const time = firstActiveSlot?.local_time?.slice(0, 5) || input.time || '08:00';
   const offset = input.timezone === 'Asia/Jayapura' ? '+09:00' : input.timezone === 'Asia/Makassar' ? '+08:00' : '+07:00';
   return `${input.start_date}T${time}:00${offset}`;
 }

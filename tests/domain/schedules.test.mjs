@@ -71,5 +71,21 @@ test('schedule creation supplies scheduled_at through the typed RPC contract', (
   const source = read('src/features/schedules/useSchedules.ts');
   assert.match(source, /rpc\(['"]create_schedule/);
   assert.match(source, /scheduled_at_value:\s*scheduledAt\(input\)/);
+  assert.match(source, /first active slot is the source of truth/i);
+  assert.match(source, /firstActiveSlot\?\.local_time/);
   assert.doesNotMatch(source, /insert\(\{\s*\.\.\.input/);
+});
+
+test('editing a slot time updates the schedule anchor and future incomplete tasks', () => {
+  const migration = read('supabase/migrations/20261028000100_fix_schedule_slot_time_sync.sql');
+  const timeField = read('src/components/TimeField.tsx');
+  const formLogic = read('src/features/schedules/scheduleForm.ts');
+  assert.match(migration, /sync_schedule_slot_time_metadata/);
+  assert.match(migration, /after insert or update of local_time, sort_order, is_active/i);
+  assert.match(migration, /o\.completed_at is null/);
+  assert.match(migration, /o\.archived_at is null/);
+  assert.match(migration, /scheduled_at =/);
+  assert.match(timeField, /onBlur/);
+  assert.match(timeField, /normalizePart/);
+  assert.match(formLogic, /23:59/);
 });
