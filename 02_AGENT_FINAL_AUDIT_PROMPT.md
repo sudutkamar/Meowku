@@ -1,0 +1,5 @@
+# PROMPT FINAL AUDIT (COPY/PASTE SETELAH AGENT MENGAKU SELESAI)
+
+Audit proyek Meowku yang baru kamu implementasikan. Jangan mengubah desain tanpa alasan. Berikan hasil jujur PASS/FAIL/BLOCKED per checkpoint pada `DOKUMENTASI/04_QA_CHECKPOINTS.md`. Jalankan seluruh perintah lint/typecheck/test/build dan smoke browser nyata. Verifikasi semua 10 route deep link; Auth/first owner onboarding; DB migrations; negative RLS cross-tenant; Edge JWT+role; invite/accept; target-level schedule completion; duplicate generate; per-target audit; empty states tanpa fake data; query keys and auth cache isolation; storage policies; responsive 375/768/1672; 10 screenshot perbandingan UI.
+
+Cari dan hapus business data runtime palsu: `mock`, `demo`, `fixture`, nama Nala/Mochi/Oreo/Luna, sample product branded, `Math.random`, static KPIs, frontend `service_role` atau `sb_secret`. Khusus test files fixture diperbolehkan pada isolated test DB dan harus jelas tidak dibundel production. Tuliskan perintah, output, bukti, kekurangan dan perbaikan. Jangan menyebut '100% tuntas' jika ada satu saja alur inti belum lulus.

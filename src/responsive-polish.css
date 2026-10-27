@@ -1,0 +1,828 @@
+/* Mobile-first guardrails for every authenticated page. */
+html, body, #root { min-width: 0; }
+body { overflow-x: hidden; }
+.app main, .content, .entity-page, .management, .settings-page, .report-page { min-width: 0; }
+.panel, .data-list, .schedule-form, .schedule-results, .entity-form-card, .member-list-panel { min-width: 0; }
+button, input, select, textarea { max-width: 100%; }
+img, svg, video { max-width: 100%; }
+:root {
+  --meowku-page-inline: clamp(10px, 2.4vw, 32px);
+  --meowku-section-gap: clamp(12px, 1.8vw, 22px);
+  --meowku-card-radius: clamp(16px, 1.8vw, 24px);
+}
+
+/* Dashboard copy stays readable when database-backed names are long. */
+.dashboard-list-row > div,
+.activity-row > div,
+.dashboard-attention-row > span:nth-child(2),
+.cat-progress-row > span:first-child,
+.dashboard-entities > div > span {
+  min-width: 0;
+}
+.dashboard-list-row strong,
+.dashboard-list-row small,
+.activity-row strong,
+.activity-row small,
+.dashboard-attention-row strong,
+.dashboard-attention-row small,
+.cat-progress-row strong,
+.cat-progress-row small,
+.dashboard-entities strong,
+.dashboard-entities small,
+.cat-strip button strong,
+.cat-strip button small {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+.dashboard-checklist-side {
+  flex-wrap: wrap;
+}
+
+/* Runtime QA found the broad light-theme typography rule winning over the
+   auth hero. Keep the hero's foreground colors explicit so its dark gradient
+   never receives dark body text. */
+.auth-page .auth-hero h2 {
+  color: #fff7f1;
+}
+.auth-page .auth-hero .auth-hero-copy {
+  color: #f1d6c5;
+}
+.auth-page .auth-hero .auth-hero-points {
+  color: #ffe6d5;
+}
+.auth-page .auth-hero .eyebrow {
+  color: #ffbd91;
+}
+
+/* Mobile shell guardrails for 320–430px devices. The header has several
+   controls, so the search must be the flexible part while action buttons keep
+   their tap target and never force the page wider than the viewport. */
+@media (max-width: 760px) {
+  .app main > header {
+    min-width: 0;
+    padding-inline: max(10px, env(safe-area-inset-left)) max(10px, env(safe-area-inset-right));
+    gap: 8px;
+  }
+  .app main > header .global-search {
+    min-width: 0;
+    max-width: none;
+    flex: 1 1 auto;
+  }
+  .app main > header .global-search .search {
+    min-width: 0;
+    width: 100%;
+    height: 42px;
+    gap: 8px;
+    padding-inline: 9px;
+  }
+  .app main > header .global-search .search > svg {
+    flex: 0 0 auto;
+    width: 16px;
+  }
+  .app main > header .header-right {
+    min-width: 0;
+    flex: 0 0 auto;
+    gap: 2px;
+  }
+  .app main > header .header-right > * {
+    flex: 0 0 auto;
+  }
+  .app main > header .global-search .search-results {
+    position: fixed !important;
+    z-index: 50;
+    top: calc(66px + env(safe-area-inset-top));
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-height: calc(100dvh - 86px);
+    overflow-y: auto;
+  }
+  .notification-bell .notification-panel {
+    position: fixed !important;
+    z-index: 50;
+    top: calc(66px + env(safe-area-inset-top));
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-height: calc(100dvh - 86px);
+    overflow-y: auto;
+  }
+  .app .sidebar {
+    max-height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: max(22px, env(safe-area-inset-bottom));
+  }
+  .app .header-right .household-switcher {
+    display: none;
+  }
+  .app .mobile-household-switcher {
+    display: grid;
+    gap: 7px;
+    margin: 0 10px 16px;
+    color: #8a5b3c;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .app .mobile-household-switcher select {
+    width: 100%;
+    min-width: 0;
+    height: 40px;
+    border: 1px solid #f0c9a8;
+    border-radius: 11px;
+    background: #fffaf5;
+    color: #5d3d2d;
+    padding: 0 10px;
+    font: 600 12px 'DM Sans';
+  }
+  [data-theme="dark"] .app .mobile-household-switcher { color: #ffbd91; }
+  [data-theme="dark"] .app .mobile-household-switcher select {
+    border-color: #76513d;
+    background: #352b25;
+    color: #fff6ef;
+  }
+}
+
+/* The desktop header switcher is intentionally replaced by the drawer copy
+   above on mobile; this keeps the select usable without shrinking search. */
+.mobile-household-switcher {
+  display: none;
+}
+
+@media (max-width: 420px) {
+  .app main > header {
+    gap: 6px;
+  }
+  .app main > header .mobile-brand img {
+    width: 32px;
+    height: 32px;
+  }
+  .app main > header .header-right .language-button {
+    display: none;
+  }
+  .app main > header .header-right .preference-button {
+    width: 32px;
+    min-width: 32px;
+    min-height: 36px;
+    padding-inline: 4px;
+  }
+  .app main > header .header-right .avatar {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* Cross-page layout audit: management pages should use the available canvas
+   instead of inheriting the old 280–360px form column. Keep the schedule
+   workspace on its dedicated proportions above, while giving cats, litter
+   boxes, catalog, and members the same breathing room. */
+@media (min-width: 761px) {
+  .entity-page:has(.entity-layout) {
+    width: min(100%, 1320px);
+    max-width: 1320px;
+  }
+  .entity-page:has(.entity-layout:not(.schedule-layout)) .entity-layout:not(.schedule-layout) {
+    grid-template-columns: minmax(380px, .86fr) minmax(0, 1.14fr);
+    gap: 24px;
+  }
+  .members-page {
+    width: min(100%, 1380px);
+    max-width: 1380px;
+  }
+  .members-page .members-layout {
+    grid-template-columns: minmax(390px, .82fr) minmax(0, 1.38fr);
+    gap: 24px;
+  }
+  .settings-page,
+  .schedule-settings-page,
+  .report-page {
+    width: min(100%, 1280px);
+    max-width: 1280px;
+  }
+  .settings-page > .settings-form,
+  .settings-page > .notification-settings,
+  .settings-page > .settings-export-section {
+    width: min(100%, 880px);
+  }
+  .settings-page > .notification-settings,
+  .settings-page > .settings-export-section {
+    margin-top: 18px;
+  }
+  .settings-page .export-card {
+    max-width: none;
+  }
+  .schedule-history-page,
+  .history-page {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1050px) {
+  .entity-page:has(.entity-layout:not(.schedule-layout)) .entity-layout:not(.schedule-layout) {
+    grid-template-columns: minmax(330px, .86fr) minmax(0, 1.14fr);
+    gap: 18px;
+  }
+  .members-page .members-layout {
+    grid-template-columns: minmax(320px, .8fr) minmax(0, 1.2fr);
+    gap: 18px;
+  }
+}
+
+/* Headings and action groups must be allowed to wrap before they force a
+   horizontal crop on tablet widths. */
+@media (max-width: 900px) {
+  .page-heading,
+  .section-heading,
+  .form-card-heading,
+  .history-panel-heading,
+  .profile-settings-heading,
+  .cat-care-heading,
+  .dashboard-card-heading,
+  .schedule-history-controls,
+  .schedule-history-summary {
+    flex-wrap: wrap;
+  }
+  .page-heading > div,
+  .section-heading > div,
+  .form-card-heading > div,
+  .history-panel-heading > div,
+  .profile-settings-heading > div,
+  .dashboard-card-heading > div {
+    min-width: 0;
+    flex: 1 1 280px;
+  }
+  .date-label {
+    max-width: 100%;
+    text-align: left;
+  }
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .report-insight-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .schedule-history-summary {
+    align-items: flex-start;
+    gap: 5px 10px;
+  }
+}
+
+/* Long names and secondary copy are content, not decoration: let them wrap
+   in every list and action cluster instead of hiding the last characters. */
+.data-row > div:nth-child(2),
+.data-row > div:nth-child(2) b,
+.data-row > div:nth-child(2) small,
+.pending-row > div,
+.pending-row b,
+.pending-row small,
+.schedule-history-title strong,
+.schedule-history-content,
+.history-event-body,
+.notification-item > span,
+.export-card,
+.settings-page .notification-settings {
+  min-width: 0;
+}
+.data-row > div:nth-child(2) b,
+.data-row > div:nth-child(2) small,
+.pending-row b,
+.pending-row small,
+.schedule-history-title strong,
+.schedule-history-content,
+.notification-item b,
+.notification-item small,
+.notification-item time,
+.export-card p,
+.settings-page .notification-settings p {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.data-row > button,
+.data-row > .row-action,
+.data-row > .secondary {
+  flex: 0 0 auto;
+}
+.pending-row {
+  align-items: flex-start;
+}
+.pending-row .status-badge,
+.schedule-history-title .occurrence-status {
+  flex: 0 0 auto;
+}
+
+/* Settings is one page with three independent cards, not three nested pages. */
+.settings-page {
+  display: grid;
+  align-content: start;
+  gap: 0;
+}
+.settings-page > .page-heading {
+  margin-bottom: 22px;
+}
+.settings-page > .settings-form,
+.settings-page > .notification-settings,
+.settings-page > .settings-export-section {
+  max-width: 880px;
+}
+.settings-page > .settings-export-section {
+  display: grid;
+  gap: 0;
+}
+.settings-page > .settings-export-section > .page-heading {
+  min-height: auto;
+  margin: 0 0 12px;
+}
+.settings-page > .settings-export-section > .page-heading::after {
+  display: none;
+}
+.settings-page > .settings-export-section > .export-card {
+  width: 100%;
+}
+
+/* On small screens the member table becomes a readable card stack; never
+   allow a role/action control to squeeze the identity column to zero. */
+@media (max-width: 760px) {
+  .members-page .member-identity {
+    align-items: flex-start;
+  }
+  .members-page .member-identity > div {
+    min-width: 0;
+  }
+  .members-page .member-actions {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  .members-page .member-actions select,
+  .members-page .member-actions .row-action {
+    min-height: 38px;
+  }
+  .settings-page > .settings-form,
+  .settings-page > .notification-settings,
+  .settings-page > .settings-export-section {
+    width: 100%;
+  }
+  .settings-page > .settings-export-section > .page-heading {
+    display: block;
+  }
+  .settings-page > .settings-export-section > .page-heading h1 {
+    font-size: 22px;
+  }
+}
+
+/* Final visual pass for compact slot editors: make each slot read as one
+   cohesive control instead of four unrelated controls. */
+@container (max-width: 520px) {
+  .schedule-form .recurrence-fieldset:has(.slot-editor) {
+    padding: 16px;
+    border-color: #e5cdbb;
+    background: linear-gradient(145deg, #fffaf5 0%, #fff 100%);
+  }
+  .schedule-form .recurrence-fieldset:has(.slot-editor) legend {
+    padding-inline: 8px;
+    color: #b9551c;
+    font-size: 15px;
+  }
+  .schedule-form .slot-editor {
+    gap: 8px;
+    margin: 0 0 10px;
+    padding: 12px 12px 10px 8px;
+    border-color: #edd9c8;
+    border-radius: 16px;
+    background: rgba(255, 253, 251, .92);
+    box-shadow: 0 5px 14px rgba(117, 63, 32, .06);
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+  }
+  .schedule-form .slot-editor:focus-within {
+    border-color: #ff9b5b;
+    box-shadow: 0 0 0 3px rgba(255, 155, 91, .14), 0 8px 18px rgba(117, 63, 32, .08);
+    transform: translateY(-1px);
+  }
+  .schedule-form .slot-editor .slot-drag-handle {
+    font-size: 17px;
+    opacity: .82;
+  }
+  .schedule-form .slot-editor > input {
+    height: 44px;
+    padding-inline: 14px;
+    border-color: #e6d4c5;
+    background: #fff;
+    color: #332720;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .schedule-form .slot-editor > .time-field {
+    width: 112px;
+    height: 38px;
+    padding: 0 9px;
+    border-color: #e4cdbb;
+    background: #fff8f2;
+    color: #5d3d2d;
+    box-shadow: none;
+  }
+  .schedule-form .slot-editor > .time-field::before {
+    content: 'Jam';
+    margin-right: 4px;
+    color: #8b6b58;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .schedule-form .slot-editor .slot-row-actions {
+    justify-self: start;
+    justify-content: flex-start;
+    margin-left: 120px;
+    gap: 6px;
+  }
+  .schedule-form .slot-editor .slot-move,
+  .schedule-form .slot-editor .icon-button {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid #ead8c9;
+    border-radius: 10px;
+    background: #fffaf5;
+    color: #a56845;
+    line-height: 1;
+  }
+  .schedule-form .slot-editor .slot-move:hover:not(:disabled),
+  .schedule-form .slot-editor .icon-button:hover {
+    border-color: #ff9b5b;
+    background: #fff0e2;
+    color: #c64d0a;
+  }
+  [data-theme="dark"] .schedule-form .recurrence-fieldset:has(.slot-editor) {
+    border-color: #59483b;
+    background: linear-gradient(145deg, #2b231f 0%, #241f1b 100%);
+  }
+  [data-theme="dark"] .schedule-form .recurrence-fieldset:has(.slot-editor) legend {
+    color: #ffbd91;
+  }
+  [data-theme="dark"] .schedule-form .slot-editor {
+    border-color: #59483b;
+    background: linear-gradient(145deg, #302721, #28211d);
+  }
+  [data-theme="dark"] .schedule-form .slot-editor > input {
+    border-color: #59483b;
+    background: #211c19;
+    color: #fff6ef;
+  }
+  [data-theme="dark"] .schedule-form .slot-editor > .time-field,
+  [data-theme="dark"] .schedule-form .slot-editor .slot-move,
+  [data-theme="dark"] .schedule-form .slot-editor .icon-button {
+    border-color: #76513d;
+    background: #352b25;
+    color: #ffbd91;
+  }
+}
+
+/* Give the schedule workspace enough breathing room on desktop. The generic
+   management grid reserves only 280–360px for the first column, which makes
+   the schedule form feel cramped even when the page has unused width. */
+@media (min-width: 761px) {
+  .entity-page:has(.schedule-layout) {
+    width: min(100%, 1380px);
+    max-width: 1380px;
+  }
+  .schedule-layout {
+    grid-template-columns: minmax(420px, .92fr) minmax(0, 1.35fr);
+    gap: 24px;
+  }
+  .schedule-layout .schedule-form,
+  .schedule-layout .schedule-results {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1050px) {
+  .schedule-layout {
+    grid-template-columns: minmax(380px, .92fr) minmax(0, 1fr);
+    gap: 18px;
+  }
+}
+.content { padding-inline: var(--meowku-page-inline); }
+.entity-page, .dashboard-page, .cat-detail-page, .schedule-history-page, .history-page { width: min(100%, 1280px); margin-inline: auto; }
+.page-heading h1, .dashboard-page > .page-heading h1 { font-size: clamp(24px, 3.4vw, 36px); }
+.panel, .dashboard-card, .dashboard-stat, .data-list { border-radius: var(--meowku-card-radius); }
+.modal-backdrop, .profile-modal-backdrop { padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+
+@media (min-width: 761px) {
+  header { padding-inline: clamp(16px, 2.4vw, 32px); gap: clamp(12px, 2vw, 25px); }
+  .content { padding-block: clamp(18px, 2.2vw, 32px) clamp(28px, 3vw, 42px); }
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+  .auth-page { min-height: 100dvh; padding-block: 12px; }
+  .auth-shell { min-height: 0; }
+  .auth-hero { padding-block: 24px; }
+  .auth-card { margin-block: 16px; }
+  .modal-card, .confirm-dialog, .assignee-edit-dialog { max-height: calc(100dvh - 20px); overflow-y: auto; }
+}
+
+@supports not (height: 100dvh) {
+  .auth-page, .schedule-form, .assignee-edit-dialog, .confirm-dialog, .modal-card { max-height: 100vh; }
+}
+
+@media (max-width: 760px) {
+  .content { width: 100%; padding: 18px 14px 30px; }
+  header { position: sticky; top: 0; z-index: 20; }
+  .global-search, .global-search .search, .global-search .search input { min-width: 0; }
+  .search-results { left: -42px; right: -42px; max-height: min(460px, 70vh); }
+  .header-right { min-width: max-content; }
+  .header-right .logout { display: none; }
+  .page-heading, .section-heading, .form-card-heading, .history-panel-heading, .profile-settings-heading, .cat-care-heading, .dashboard-card-heading { min-width: 0; }
+  .page-heading h1 { font-size: clamp(24px, 7vw, 31px); line-height: 1.12; overflow-wrap: anywhere; }
+  .page-heading p:not(.eyebrow), .field-hint { max-width: 100%; overflow-wrap: anywhere; }
+  .panel { padding: 17px; border-radius: 18px; }
+  .panel h2, .section-heading h2 { font-size: clamp(17px, 5vw, 21px); }
+  .entity-layout, .feature-grid, .cat-care-grid, .report-insight-grid, .dashboard-grid, .dashboard-lower, .schedule-layout { grid-template-columns: minmax(0, 1fr); }
+  .data-list, .member-list-panel, .schedule-results > .panel { overflow-x: hidden; }
+  .data-row { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 10px; align-items: start; }
+  .data-row > div:nth-child(2), .data-row small, .data-row b { min-width: 0; overflow-wrap: anywhere; }
+  .data-row > button, .data-row > .row-action, .data-row > .secondary { grid-column: 2; justify-self: start; margin-left: 0; }
+  .form-actions, .modal-actions, .dialog-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .form-actions > button, .modal-actions > button, .dialog-actions > button { width: 100%; min-height: 42px; }
+  .schedule-form { max-height: calc(100dvh - 92px); padding: 16px; }
+  .schedule-date-grid, .schedule-recurrence-grid, .rotation-date-grid, .form-grid { grid-template-columns: minmax(0, 1fr); }
+  .slot-editor { grid-template-columns: 20px minmax(0, 1fr) 94px auto; }
+  .weekday-picker > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .weekday-picker button { min-width: 0; padding-inline: 4px; }
+  .rotation-day-grid { grid-template-columns: minmax(0, 1fr); }
+  .schedule-history-panel, .history-panel { padding: 16px; }
+  .cat-care-form-row { grid-template-columns: minmax(0, 1fr); }
+  .cat-care-tabs { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .cat-care-tabs button { flex: 0 0 auto; white-space: nowrap; }
+  .food-scan-buttons { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .food-scan-buttons button, .food-scan-upload { width: 100%; }
+  .assignee-row strong, .assignee-row small { overflow-wrap: anywhere; }
+  .assignee-edit-dialog, .confirm-dialog, .modal-card { width: 100%; max-height: calc(100dvh - 24px); overflow-y: auto; }
+  .modal-backdrop, .profile-modal-backdrop { padding: 12px; align-items: center; }
+  .profile-modal { width: 100%; max-height: calc(100dvh - 24px); }
+  .history-event-label strong { overflow-wrap: anywhere; }
+  .report-filters { grid-template-columns: minmax(0, 1fr); }
+  .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .metric-card { padding: 14px; }
+  .metric-card b { font-size: 23px; }
+}
+
+@media (max-width: 420px) {
+  .content { padding-inline: 10px; }
+  header { padding-inline: 10px; gap: 8px; }
+  .mobile-brand img { width: 32px; height: 32px; }
+  .preference-button { padding: 6px; }
+  .metric-grid, .dashboard-stats { grid-template-columns: minmax(0, 1fr); }
+  .dashboard-stat { min-height: 68px !important; }
+  .weekday-picker > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .slot-editor { grid-template-columns: 18px minmax(0, 1fr) 82px auto; gap: 4px; }
+  .form-actions, .modal-actions, .dialog-actions { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 1100px) {
+  .auth-page { display: block; min-height: 100dvh; padding: 14px 10px; overflow-y: auto; }
+  .auth-shell { grid-template-columns: minmax(0, 1fr); width: min(100%, 620px); min-height: 0; margin: 0 auto; border-radius: 26px; overflow: hidden; }
+  .auth-hero { min-height: 250px; padding: clamp(24px, 6vw, 40px) clamp(20px, 6vw, 42px) clamp(30px, 7vw, 48px); border-radius: 0; }
+  .auth-card { margin: 0; width: auto; border: 0 !important; border-top: 1px solid rgba(255, 173, 121, .3) !important; border-radius: 0 !important; box-shadow: none !important; padding: clamp(24px, 6vw, 42px) clamp(20px, 6vw, 42px) max(28px, env(safe-area-inset-bottom)) !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+/* Schedule form: keep the custom-category helper in normal flow on narrow
+   screens so it never sits on top of the next field. */
+.schedule-form .custom-category-field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 16px;
+  line-height: 1.35;
+}
+.schedule-form .custom-category-field input {
+  min-width: 0;
+  margin-top: 0;
+}
+.schedule-form .custom-category-field .field-hint {
+  display: block;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.schedule-form .custom-category-field select,
+.schedule-form .custom-category-field textarea {
+  min-width: 0;
+}
+
+.schedule-form {
+  container-type: inline-size;
+}
+
+@media (max-width: 760px) {
+  .schedule-form .custom-category-field {
+    padding: 12px;
+  }
+  .schedule-form .custom-category-field .field-hint {
+    font-size: 11px;
+  }
+}
+
+/* Slot labels need a real column on small screens. Keeping the action buttons
+   on a second row prevents the input from collapsing to a few characters. */
+@media (max-width: 600px) {
+  .schedule-form .slot-editor {
+    grid-template-columns: 20px minmax(0, 1fr) 88px;
+    gap: 6px;
+    align-items: center;
+  }
+  .schedule-form .slot-editor > input {
+    grid-column: 2;
+    min-width: 0;
+    width: 100%;
+    font-size: 13px;
+  }
+  .schedule-form .slot-editor > .time-field {
+    grid-column: 3;
+    min-width: 0;
+    width: 88px;
+  }
+  .schedule-form .slot-editor .slot-row-actions {
+    grid-column: 2 / -1;
+    justify-content: flex-end;
+    min-height: 30px;
+  }
+}
+
+/* The schedule form can be narrow inside a two-column page even when the
+   browser viewport is wide. Container queries cover that case as well. */
+@container (max-width: 520px) {
+  .schedule-form .slot-editor {
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 6px;
+    margin: 0 0 10px;
+    padding: 10px;
+    border: 1px solid #ead8c9;
+    border-radius: 13px;
+    background: #fffaf5;
+    align-items: center;
+  }
+  .schedule-form .slot-editor .slot-drag-handle {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    width: 20px;
+    color: #d46c2c;
+  }
+  .schedule-form .slot-editor > input {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    width: 100%;
+    height: 42px;
+    font-size: 13px;
+  }
+  .schedule-form .slot-editor > .time-field {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+    width: 108px;
+    justify-self: start;
+    height: 38px;
+    padding: 0 8px;
+    border-color: #e4cdbb;
+    background: #fff;
+  }
+  .schedule-form .slot-editor > .time-field::before {
+    content: 'Jam';
+    margin-right: 4px;
+    color: #8b6b58;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .schedule-form .slot-editor .slot-row-actions {
+    grid-column: 2;
+    grid-row: 2;
+    justify-content: flex-end;
+    gap: 6px;
+    min-height: 30px;
+  }
+  .schedule-form .slot-editor .slot-move,
+  .schedule-form .slot-editor .icon-button {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid #ead8c9;
+    border-radius: 9px;
+    background: #fff;
+    color: #a56845;
+    line-height: 1;
+  }
+  .schedule-form .slot-editor .slot-move:hover:not(:disabled),
+  .schedule-form .slot-editor .icon-button:hover {
+    border-color: #ff9b5b;
+    background: #fff0e2;
+    color: #c64d0a;
+  }
+  [data-theme="dark"] .schedule-form .slot-editor {
+    border-color: #59483b;
+    background: #2b231f;
+  }
+  [data-theme="dark"] .schedule-form .slot-editor > .time-field,
+  [data-theme="dark"] .schedule-form .slot-editor .slot-move,
+  [data-theme="dark"] .schedule-form .slot-editor .icon-button {
+    border-color: #76513d;
+    background: #352b25;
+    color: #ffbd91;
+  }
+  [data-theme="dark"] .schedule-form .slot-editor > .time-field::before {
+    color: #d5b39e;
+  }
+}
+
+/* Keep the final compact-slot composition last in the cascade. */
+@container (max-width: 520px) {
+  .schedule-form .slot-editor {
+    gap: 8px;
+    margin: 0 0 10px;
+    padding: 12px 12px 10px 8px;
+    border: 1px solid #edd9c8;
+    border-radius: 16px;
+    background: rgba(255, 253, 251, .92);
+    box-shadow: 0 5px 14px rgba(117, 63, 32, .06);
+  }
+  .schedule-form .slot-editor:focus-within {
+    border-color: #ff9b5b;
+    box-shadow: 0 0 0 3px rgba(255, 155, 91, .14), 0 8px 18px rgba(117, 63, 32, .08);
+    transform: translateY(-1px);
+  }
+  .schedule-form .slot-editor > input {
+    height: 44px;
+    padding-inline: 14px;
+    border-color: #e6d4c5;
+    background: #fff;
+    color: #332720;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .schedule-form .slot-editor > .time-field {
+    width: 112px;
+    height: 38px;
+    padding: 0 9px;
+    border-color: #e4cdbb;
+    background: #fff8f2;
+    color: #5d3d2d;
+    box-shadow: none;
+  }
+  .schedule-form .slot-editor > .time-field::before {
+    content: 'Jam';
+    margin-right: 4px;
+    color: #8b6b58;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .schedule-form .slot-editor .slot-row-actions {
+    justify-self: start;
+    justify-content: flex-start;
+    margin-left: 120px;
+    gap: 6px;
+  }
+  .schedule-form .slot-editor .slot-move,
+  .schedule-form .slot-editor .icon-button {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid #ead8c9;
+    border-radius: 10px;
+    background: #fffaf5;
+    color: #a56845;
+    line-height: 1;
+  }
+  [data-theme="dark"] .schedule-form .slot-editor {
+    border-color: #59483b;
+    background: linear-gradient(145deg, #302721, #28211d);
+  }
+  [data-theme="dark"] .schedule-form .slot-editor > input {
+    border-color: #59483b;
+    background: #211c19;
+    color: #fff6ef;
+  }
+  [data-theme="dark"] .schedule-form .slot-editor > .time-field,
+  [data-theme="dark"] .schedule-form .slot-editor .slot-move,
+  [data-theme="dark"] .schedule-form .slot-editor .icon-button {
+    border-color: #76513d;
+    background: #352b25;
+    color: #ffbd91;
+  }
+}

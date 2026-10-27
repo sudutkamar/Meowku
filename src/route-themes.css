@@ -1,0 +1,58 @@
+/* Per-route visual language: same Meowku system, with a small personality per area. */
+.entity-page { position: relative; isolation: isolate; }
+.entity-page > .page-heading,
+.entity-page > .schedule-settings-intro,
+.entity-page > .admin-capability-panel { position: relative; }
+.entity-page > .page-heading { padding-right: 116px; }
+.entity-page > .page-heading > div { min-width: 0; }
+.entity-page > .page-heading::after,
+.entity-page > .schedule-settings-intro::after,
+.entity-page > .admin-capability-panel::after {
+  content: ''; position: absolute; right: 1.5rem; bottom: .75rem; width: 84px; height: 84px;
+  background: url('/illustrations/meowku-checklist-cat.webp') center / contain no-repeat;
+  opacity: .88; pointer-events: none; transform: rotate(4deg);
+}
+.entity-page:has(.report-filters) > .page-heading::after,
+.entity-page:has(.export-card) > .page-heading::after,
+.entity-page:has(.settings-form) > .page-heading::after { background-image: url('/illustrations/meowku-food-cat.webp'); transform: rotate(6deg); }
+.entity-page:has(.report-filters) .report-filters,
+.entity-page:has(.export-card) .export-card,
+.entity-page:has(.settings-form) .settings-form { border-top: 3px solid var(--accent, #ff7a1a); }
+.entity-page:has(.report-filters) .metric-card:nth-child(1) { --metric-accent: #ff9d62; }
+.entity-page:has(.report-filters) .metric-card:nth-child(2) { --metric-accent: #35c892; }
+.entity-page:has(.report-filters) .metric-card:nth-child(3) { --metric-accent: #f06b4f; }
+.entity-page:has(.report-filters) .metric-card:nth-child(4) { --metric-accent: #8b7cff; }
+.entity-page:has(.report-filters) .metric-card { border-top: 3px solid var(--metric-accent, #ff7a1a); }
+.entity-page:has(.schedule-layout) .schedule-form { border-top: 3px solid #ff9d62; background: linear-gradient(145deg, color-mix(in srgb, var(--panel) 92%, #ff9d62 8%), var(--panel)); }
+.entity-page:has(.schedule-layout) .schedule-results > .panel,
+.entity-page:has(.schedule-history-panel) .schedule-history-panel { border-top: 3px solid #7ed6b0; }
+.entity-page:has(.schedule-settings-intro) .schedule-settings-intro { border-top: 3px solid #ff9d62; background: linear-gradient(145deg, color-mix(in srgb, var(--panel) 90%, #ff9d62 10%), var(--panel)); }
+.entity-page:has(.members-layout) .admin-capability-panel { border-top: 3px solid #9d8cff; background: linear-gradient(145deg, color-mix(in srgb, var(--panel) 90%, #9d8cff 10%), var(--panel)); }
+.entity-page:has(.members-layout) .admin-capability-panel { padding-right: 150px; }
+.entity-page:has(.members-layout) .admin-capability-panel::after { right: 22px; bottom: 8px; width: 78px; height: 78px; }
+.entity-page:has(.members-layout) .admin-capability-actions { position: relative; z-index: 1; }
+.entity-page:has(.history-panel) .history-panel { border-top: 3px solid #7ed6b0; }
+.entity-page:has(.entity-form-card) .entity-form-card { box-shadow: 0 18px 40px rgba(73, 42, 25, .08); }
+.entity-page:has(.data-list) .data-row { transition: transform .2s ease, border-color .2s ease, background-color .2s ease; }
+.entity-page:has(.data-list) .data-row:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.auth-page { position: relative; overflow: hidden; background: radial-gradient(circle at 12% 15%, rgba(255, 157, 98, .20), transparent 26%), radial-gradient(circle at 88% 80%, rgba(126, 214, 176, .18), transparent 24%), var(--bg); }
+.auth-page::before, .auth-page::after { content: '🐾'; position: absolute; color: rgba(255, 122, 26, .18); font-size: 7rem; pointer-events: none; animation: paw-float 5s ease-in-out infinite; }
+.auth-page::before { left: 8%; top: 12%; transform: rotate(-18deg); }
+.auth-page::after { right: 9%; bottom: 12%; transform: rotate(16deg); animation-delay: 1.4s; }
+.auth-card { position: relative; z-index: 1; border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border)); box-shadow: 0 28px 80px rgba(55, 31, 18, .16); }
+.auth-card::after { content: ''; display: block; width: 112px; height: 112px; margin: 1rem auto -2.7rem; background: url('/illustrations/meowku-checklist-cat.webp') center / contain no-repeat; opacity: .96; pointer-events: none; }
+.profile-modal .profile-settings-embedded { padding-top: 42px; }
+.profile-modal-close { transition: transform .18s ease, background-color .18s ease; }
+.install-app-card { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.install-app-card h2 { margin: 4px 0; }
+.install-app-card p:not(.eyebrow) { margin: 0; color: var(--muted, #78695e); line-height: 1.5; }
+.install-app-button { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.install-app-help, .install-app-state { max-width: 420px; font-size: 13px; }
+.install-app-state { color: #157347; font-weight: 700; }
+.profile-modal-close:hover { transform: rotate(8deg) scale(1.05); }
+.sidebar, .nav-item, .sidebar-collapse, .schedule-filter-tabs button, .cat-care-tabs button { transition: transform .22s ease, background-color .22s ease, color .22s ease, border-color .22s ease, box-shadow .22s ease; }
+.sidebar { will-change: transform; }
+@keyframes paw-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -12px; } }
+@media (max-width: 760px) { .entity-page > .page-heading { padding-right: 78px; } .entity-page > .page-heading::after, .entity-page > .schedule-settings-intro::after { width: 60px; height: 60px; right: .8rem; opacity: .6; } .entity-page:has(.members-layout) .admin-capability-panel { padding-right: 22px; } .entity-page:has(.members-layout) .admin-capability-panel::after { display: none; } .auth-page::before, .auth-page::after { font-size: 4rem; } }
+@media (max-width: 560px) { .install-app-card { display: grid; align-items: start; } .install-app-button { width: 100%; justify-content: center; } }
+@media (prefers-reduced-motion: reduce) { .auth-page::before, .auth-page::after { animation: none; } .entity-page:has(.data-list) .data-row { transition: none; } }

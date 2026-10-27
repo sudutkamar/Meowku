@@ -1,0 +1,12 @@
+drop policy if exists "admins read all profiles" on public.profiles;
+create policy "admins read all profiles" on public.profiles for select using (public.is_admin() or id=auth.uid());
+drop policy if exists "admins update profiles" on public.profiles;
+create policy "admins update profiles" on public.profiles for update using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "admins read all cats" on public.cats;
+create policy "admins read all cats" on public.cats for select using (public.is_admin() or owner_id=auth.uid());
+drop policy if exists "admins read all litter boxes" on public.litter_boxes;
+create policy "admins read all litter boxes" on public.litter_boxes for select using (public.is_admin() or owner_id=auth.uid());
+drop policy if exists "admins read all schedules" on public.schedules;
+create policy "admins read all schedules" on public.schedules for select using (public.is_admin() or owner_id=auth.uid());
+drop policy if exists "admins read all activities" on public.activities;
+create policy "admins read all activities" on public.activities for select using (public.is_admin() or owner_id=auth.uid());
