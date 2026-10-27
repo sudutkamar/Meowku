@@ -45,12 +45,17 @@ test('rotation UI exposes global weekday controls and member-backed save', () =>
 
 test('rotation supports named assignees without login accounts', () => {
   const migration = read('supabase/migrations/20261025000500_custom_schedule_assignees.sql');
+  const repair = read('supabase/migrations/20261027000400_fix_rotation_assignee_validation.sql');
   const page = read('src/features/members/ScheduleRotationPanel.tsx');
   const hook = read('src/features/members/useScheduleRotation.ts');
   assert.match(migration, /household_assignees/);
   assert.match(migration, /display_name/);
   assert.match(migration, /assignee_id/);
   assert.match(migration, /assignee_not_active/);
+  assert.match(repair, /new\.assignee_id is not null/);
+  assert.match(repair, /assignee_id is authoritative/);
+  assert.match(repair, /return new/);
+  assert.match(repair, /rotation_member_not_active/);
   assert.match(page, /Tambah petugas/);
   assert.match(page, /assignee_id/);
   assert.match(hook, /household_assignees/);
