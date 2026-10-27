@@ -83,4 +83,6 @@ test('tomorrow preview keeps database occurrences and does not depend on client 
   assert.doesNotMatch(page, /tomorrowOccurrences\.data \?\? \[\]\)\.filter/);
   assert.match(hook, /if \(filter !== 'Tomorrow'\)/);
   assert.match(hook, /eq\('schedules\.status', 'active'\)/);
+  assert.match(hook, /occurrences\.error && filter !== 'Tomorrow'/);
+  assert.match(hook, /assignees\.error && filter !== 'Tomorrow'/);
 });

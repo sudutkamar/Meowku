@@ -167,8 +167,10 @@ export function useScheduleOccurrences(householdId: string | undefined, timezone
         supabase.from('schedule_occurrences').select('*, schedules!inner(title, category, custom_category, status, is_active, start_date, end_date, repeat_interval, repeat_unit), schedule_slots(label, local_time)').eq('household_id', householdId).eq('schedules.is_active', true).eq('schedules.status', 'active').is('archived_at', null).gte('local_date', range.from).lte('local_date', range.to).order('local_date').order('scheduled_at'),
         supabase.from('household_assignees').select('id, display_name').eq('household_id', householdId).eq('is_active', true),
       ]);
-      if (occurrences.error) throw occurrences.error;
-      if (assignees.error) throw assignees.error;
+      // Next Up tetap dapat dirender dari definisi jadwal aktif bila occurrence
+      // atau daftar assignee belum tersedia karena backfill/schema lama.
+      if (occurrences.error && filter !== 'Tomorrow') throw occurrences.error;
+      if (assignees.error && filter !== 'Tomorrow') throw assignees.error;
       const names = new Map((assignees.data ?? []).map((assignee) => [assignee.id, { display_name: assignee.display_name }]));
       return (occurrences.data ?? []).map((occurrence) => ({ ...occurrence, household_assignees: occurrence.assignee_id ? names.get(occurrence.assignee_id) ?? null : null })) as unknown as ScheduleOccurrence[];
     },

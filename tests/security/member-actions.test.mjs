@@ -40,6 +40,22 @@ test('member invite remains safe when the Edge Function is unavailable', () => {
   assert.doesNotMatch(fn, /service_role/i);
 });
 
+test('member invite sends an Auth email and does not report success before delivery', () => {
+  const page = readFileSync('src/features/members/MembersPage.tsx', 'utf8');
+  const fn = readFileSync('supabase/functions/invite-household-member/index.ts', 'utf8');
+  const migration = read('supabase/migrations/20261028000200_accept_household_invitations.sql');
+  assert.match(fn, /SUPABASE_SECRET_KEYS/);
+  assert.match(fn, /auth\.admin\.inviteUserByEmail/);
+  assert.match(fn, /email_sent: true/);
+  assert.match(fn, /emailError/);
+  assert.match(fn, /status: 'revoked'/);
+  assert.match(page, /email_sent === true/);
+  assert.match(migration, /household_members/);
+  assert.match(migration, /household_invitations/);
+  assert.match(migration, /on_auth_user_created/);
+  assert.match(migration, /status = 'accepted'/);
+});
+
 test('member migration restricts roles and protects settings/export scope', () => {
   const source = read('supabase/migrations/20261024000900_members_settings_export.sql');
   assert.match(source, /household_invitations/);
