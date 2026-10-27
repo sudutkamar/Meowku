@@ -26,6 +26,20 @@ test('member invite is bound to the active household', () => {
   assert.doesNotMatch(fn, /limit\(1\)\.maybeSingle\(\)/);
 });
 
+test('member invite remains safe when the Edge Function is unavailable', () => {
+  const page = readFileSync('src/features/members/MembersPage.tsx', 'utf8');
+  const fn = readFileSync('supabase/functions/invite-household-member/index.ts', 'utf8');
+  assert.match(page, /functions\.invoke\('invite-household-member'/);
+  assert.match(page, /from\('household_invitations'\)\.insert/);
+  assert.match(page, /supabase\.auth\.getUser\(\)/);
+  assert.match(page, /shouldUseInvitationFallback/);
+  assert.match(fn, /Access-Control-Allow-Origin/);
+  assert.match(fn, /meowku\.panda-12b\.workers\.dev/);
+  assert.match(fn, /Vary: 'Origin'/);
+  assert.doesNotMatch(page, /service_role/i);
+  assert.doesNotMatch(fn, /service_role/i);
+});
+
 test('member migration restricts roles and protects settings/export scope', () => {
   const source = read('supabase/migrations/20261024000900_members_settings_export.sql');
   assert.match(source, /household_invitations/);

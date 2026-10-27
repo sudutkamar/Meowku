@@ -45,7 +45,7 @@ test('schedule history exposes a timezone-aware next-day preview', () => {
   assert.match(page, /tomorrow-schedule-toggle/);
   assert.match(page, /aria-expanded=\{tomorrowOpen\}/);
   assert.match(page, /hasTomorrowTasks/);
-  assert.match(page, /scheduleIsDueOn\(schedule, tomorrowDate\)/);
+  assert.match(page, /scheduleIsDueOn\(schedule, date\)/);
   assert.match(page, /tomorrowCategoryOptions\.some/);
   assert.match(styles, /\.tomorrow-schedule-item/);
   assert.match(styles, /\.tomorrow-tone-feeding/);
@@ -74,4 +74,13 @@ test('tomorrow preview derives missing rows from active Supabase schedule defini
   assert.match(page, /fallbackTomorrowOccurrences/);
   assert.match(page, /mergeTomorrowOccurrences/);
   assert.match(page, /schedules\.isLoading/);
+});
+
+test('tomorrow preview keeps database occurrences and does not depend on client recurrence filtering', () => {
+  const page = read('src/features/schedule-history/ScheduleHistoryPage.tsx');
+  const hook = read('src/features/schedules/useSchedules.ts');
+  assert.match(page, /const actual = tomorrowOccurrences\.data \?\? \[\];/);
+  assert.doesNotMatch(page, /tomorrowOccurrences\.data \?\? \[\]\)\.filter/);
+  assert.match(hook, /if \(filter !== 'Tomorrow'\)/);
+  assert.match(hook, /eq\('schedules\.status', 'active'\)/);
 });

@@ -175,14 +175,12 @@ export function ScheduleHistoryPage({ household }: { household: Household }) {
   }, [today]);
   const filteredOccurrences = useMemo(() => (occurrences.data ?? []).filter((item) => category === 'all' || item.schedules?.category === category), [occurrences.data, category]);
   const tomorrowRows = useMemo(() => {
-    const actual = schedules.isLoading
-      ? tomorrowOccurrences.data ?? []
-      : (tomorrowOccurrences.data ?? []).filter((item) => {
-        const schedule = (schedules.data ?? []).find((candidate) => candidate.id === item.schedule_id);
-        return Boolean(schedule && scheduleIsDueOn(schedule, tomorrowDate));
-      });
+    // Rows yang sudah ada di database adalah sumber kebenaran untuk occurrence.
+    // Jangan hitung ulang recurrence di client karena metadata legacy/edit dapat
+    // berbeda format dengan fungsi SQL dan membuat tugas valid terhapus dari UI.
+    const actual = tomorrowOccurrences.data ?? [];
     return mergeTomorrowOccurrences(actual, schedules.data ?? [], tomorrowDate, timezone);
-  }, [tomorrowOccurrences.data, schedules.data, schedules.isLoading, tomorrowDate, timezone]);
+  }, [tomorrowOccurrences.data, schedules.data, tomorrowDate, timezone]);
   const tomorrowCategoryOptions = useMemo(() => [{ value: 'all', label: 'Semua kategori' }, ...Array.from(new Set(tomorrowRows.map(occurrenceCategory))).sort((left, right) => categoryLabel(left).localeCompare(categoryLabel(right), 'id')).map((value) => ({ value, label: categoryLabel(value) }))], [tomorrowRows]);
   useEffect(() => {
     if (tomorrowCategory !== 'all' && !tomorrowCategoryOptions.some((item) => item.value === tomorrowCategory)) setTomorrowCategory('all');

@@ -18,6 +18,18 @@ function initials(name: string) {
   return words.length > 1 ? `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase() : name.slice(0, 2).toUpperCase();
 }
 
+function functionErrorStatus(error: unknown) {
+  if (!error || typeof error !== 'object') return null;
+  if ('status' in error && typeof error.status === 'number') return error.status;
+  if ('context' in error && error.context && typeof error.context === 'object' && 'status' in error.context && typeof error.context.status === 'number') return error.context.status;
+  return null;
+}
+
+function shouldUseInvitationFallback(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : '';
+  return functionErrorStatus(error) === 404 || message.includes('failed to send a request') || message.includes('edge function') && message.includes('not found');
+}
+
 export function MembersPage({ household, onNavigate }: { household: Household; onNavigate?: (page: string) => void }) {
   const client = useQueryClient();
   const [email, setEmail] = useState('');
@@ -36,7 +48,22 @@ export function MembersPage({ household, onNavigate }: { household: Household; o
     return (rows ?? []).map((row) => { const profile = profileMap.get(row.user_id); return { ...row, role: row.role as MemberRole, full_name: displayName(profile), avatar_url: profile?.avatar_url ?? null }; });
   } });
   const invitations = useQuery({ queryKey: ['household-invitations', household.id], enabled: access.data?.can_manage_members === true, queryFn: async () => { if (!supabase) throw new Error('Supabase belum dikonfigurasi.'); const { data, error } = await supabase.from('household_invitations').select('id, email, role, status, created_at').eq('household_id', household.id).eq('status', 'pending').order('created_at', { ascending: false }); if (error) throw error; return data ?? []; } });
-  const invite = useMutation({ mutationFn: async () => { if (!supabase) throw new Error('Supabase belum dikonfigurasi.'); const { data, error } = await supabase.functions.invoke('invite-household-member', { body: { householdId: household.id, email, role } }); if (error) throw error; return data; }, onSuccess: () => { setEmail(''); void client.invalidateQueries({ queryKey: ['household-invitations', household.id] }); } });
+  const invite = useMutation({ mutationFn: async () => {
+    if (!supabase) throw new Error('Supabase belum dikonfigurasi.');
+    const normalizedEmail = email.trim().toLowerCase();
+    const body = { householdId: household.id, email: normalizedEmail, role };
+    const { data, error } = await supabase.functions.invoke('invite-household-member', { body });
+    if (!error) return data;
+    // Keep the invitation flow usable when an environment has not deployed the
+    // function yet. The direct write is still enforced by Supabase RLS: only an
+    // authenticated owner/admin can insert for this household.
+    if (!shouldUseInvitationFallback(error)) throw error;
+    const { data: sessionUser, error: userError } = await supabase.auth.getUser();
+    if (userError || !sessionUser.user) throw new Error('Sesi login sudah berakhir. Silakan masuk lagi.');
+    const fallback = await supabase.from('household_invitations').insert({ household_id: household.id, email: normalizedEmail, role, invited_by: sessionUser.user.id }).select('id, email, role, status, created_at').single();
+    if (fallback.error) throw fallback.error;
+    return fallback.data;
+  }, onSuccess: () => { setEmail(''); void client.invalidateQueries({ queryKey: ['household-invitations', household.id] }); } });
   const changeRole = useMutation({ mutationFn: async ({ userId, nextRole }: { userId: string; nextRole: 'admin' | 'member' }) => { if (!supabase) throw new Error('Supabase belum dikonfigurasi.'); const { error } = await supabase.rpc('manage_household_member', { target_household_id: household.id, target_user_id: userId, next_role: nextRole }); if (error) throw error; }, onSuccess: () => void client.invalidateQueries({ queryKey: ['members', household.id] }) });
   const remove = useMutation({ mutationFn: async (userId: string) => { if (!supabase) throw new Error('Supabase belum dikonfigurasi.'); const { error } = await supabase.rpc('remove_household_member', { target_household_id: household.id, target_user_id: userId }); if (error) throw error; }, onSuccess: () => void client.invalidateQueries({ queryKey: ['members', household.id] }) });
   const filteredMembers = useMemo(() => { const needle = search.trim().toLowerCase(); if (!needle) return members.data ?? []; return (members.data ?? []).filter((member) => member.full_name.toLowerCase().includes(needle) || member.role.toLowerCase().includes(needle)); }, [members.data, search]);

@@ -151,14 +151,20 @@ export function useScheduleOccurrences(householdId: string | undefined, timezone
     queryFn: async (): Promise<ScheduleOccurrence[]> => {
       if (!supabase || !householdId) throw new Error('Household belum tersedia.');
       const range = rangeFor(filter, timezone);
-      const { error: generationError } = await supabase.rpc('generate_schedule_occurrences', {
-        requested_household_id: householdId,
-        range_start: range.from,
-        range_end: range.to,
-      });
-      if (generationError) throw generationError;
+      // Jadwal besok punya preview berbasis definisi aktif di ScheduleHistoryPage.
+      // Jangan blokir preview hanya karena backfill occurrence gagal/terlambat;
+      // occurrence yang sudah ada tetap dibaca di bawah, lalu page menambahkan
+      // baris yang belum tersinkron dari definisi Supabase.
+      if (filter !== 'Tomorrow') {
+        const { error: generationError } = await supabase.rpc('generate_schedule_occurrences', {
+          requested_household_id: householdId,
+          range_start: range.from,
+          range_end: range.to,
+        });
+        if (generationError) throw generationError;
+      }
       const [occurrences, assignees] = await Promise.all([
-        supabase.from('schedule_occurrences').select('*, schedules!inner(title, category, custom_category, status, is_active, start_date, end_date, repeat_interval, repeat_unit), schedule_slots(label, local_time)').eq('household_id', householdId).eq('schedules.is_active', true).is('archived_at', null).gte('local_date', range.from).lte('local_date', range.to).order('local_date').order('scheduled_at'),
+        supabase.from('schedule_occurrences').select('*, schedules!inner(title, category, custom_category, status, is_active, start_date, end_date, repeat_interval, repeat_unit), schedule_slots(label, local_time)').eq('household_id', householdId).eq('schedules.is_active', true).eq('schedules.status', 'active').is('archived_at', null).gte('local_date', range.from).lte('local_date', range.to).order('local_date').order('scheduled_at'),
         supabase.from('household_assignees').select('id, display_name').eq('household_id', householdId).eq('is_active', true),
       ]);
       if (occurrences.error) throw occurrences.error;
