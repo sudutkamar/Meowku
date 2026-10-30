@@ -35,7 +35,7 @@ export async function fetchHouseholdReport(householdId: string, { fromDate, toDa
   if (!supabase) throw new Error('Supabase belum dikonfigurasi.');
   const [summary, expenses, weights, vaccines] = await Promise.all([
     fetchReportSummary(householdId, fromDate, toDate, timezone),
-    supabase.from('cat_expenses').select('category, amount, spent_at').eq('household_id', householdId).gte('spent_at', `${fromDate}T00:00:00`).lte('spent_at', `${toDate}T23:59:59.999`).eq(catId ? 'cat_id' : 'household_id', catId ?? householdId),
+    supabase.from('cat_expenses').select('category, amount, spent_at').eq('household_id', householdId).gte('spent_at', fromDate).lte('spent_at', toDate).eq(catId ? 'cat_id' : 'household_id', catId ?? householdId),
     supabase.from('cat_health_records').select('cat_id, recorded_at, weight_kg').eq('household_id', householdId).eq('record_type', 'weight').gte('recorded_at', `${fromDate}T00:00:00`).lte('recorded_at', `${toDate}T23:59:59`).not('weight_kg', 'is', null).eq(catId ? 'cat_id' : 'household_id', catId ?? householdId).order('recorded_at'),
     supabase.from('cat_vaccinations').select('next_due_at').eq('household_id', householdId).not('next_due_at', 'is', null).gte('next_due_at', fromDate).lte('next_due_at', toDate).eq(catId ? 'cat_id' : 'household_id', catId ?? householdId),
   ]);

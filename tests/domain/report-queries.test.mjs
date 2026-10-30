@@ -28,8 +28,10 @@ test('report queries return database aggregates with date filters and no literal
 
 test('report expense range includes the complete end date', () => {
   const source = readFileSync('src/lib/report-queries.ts', 'utf8');
-  assert.match(source, /spent_at.*\$\{fromDate\}T00:00:00/);
-  assert.match(source, /spent_at.*\$\{toDate\}T23:59:59\.999/);
+  assert.match(source, /\.gte\('spent_at', fromDate\)/);
+  assert.match(source, /\.lte\('spent_at', toDate\)/);
+  assert.match(source, /recorded_at.*\$\{fromDate\}T00:00:00/);
+  assert.match(source, /recorded_at.*\$\{toDate\}T23:59:59/);
 });
 
 test('history and report pages expose query states and empty states', () => {

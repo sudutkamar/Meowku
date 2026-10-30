@@ -40,6 +40,11 @@ export function CatCarePanel({
     title: "",
     notes: "",
     weight_kg: "",
+    dose_amount: "",
+    dose_unit: "",
+    frequency: "",
+    started_at: today(timezone),
+    ended_at: "",
     recorded_at: today(timezone),
   });
   const [vaccineForm, setVaccineForm] = useState({
@@ -79,6 +84,8 @@ export function CatCarePanel({
 
   const selectedCat = cats.find((cat) => cat.id === catId);
   const latestWeight = health.data?.find((record) => record.weight_kg !== null && record.weight_kg !== undefined);
+  const currentWeight = latestWeight?.weight_kg ?? selectedCat?.weight_kg ?? null;
+  const restingEnergy = currentWeight && currentWeight > 0 ? Math.round(70 * currentWeight ** 0.75) : null;
   const nextVaccine = (vaccinations.data ?? []).filter((record) => record.next_due_at).sort((a, b) => String(a.next_due_at).localeCompare(String(b.next_due_at)))[0];
   const tabs = [
     { value: "summary" as const, label: "Ringkasan" },
@@ -123,6 +130,11 @@ export function CatCarePanel({
             <span>Berat terbaru</span>
             <strong>{latestWeight?.weight_kg ? `${latestWeight.weight_kg} kg` : "—"}</strong>
             <small>{latestWeight ? new Date(latestWeight.recorded_at).toLocaleDateString("id-ID", { timeZone: timezone }) : "Belum dicatat"}</small>
+          </article>
+          <article className="panel cat-summary-card">
+            <span>RER (estimasi)</span>
+            <strong>{restingEnergy ? `${restingEnergy} kkal` : "—"}</strong>
+            <small>acuan energi istirahat, bukan resep terapi</small>
           </article>
           <div className="panel cat-summary-next">
             <div>
@@ -182,6 +194,11 @@ export function CatCarePanel({
                     weight_kg: healthForm.weight_kg
                       ? Number(healthForm.weight_kg)
                       : undefined,
+                    dose_amount: healthForm.record_type === "medication" && healthForm.dose_amount ? Number(healthForm.dose_amount) : undefined,
+                    dose_unit: healthForm.record_type === "medication" ? healthForm.dose_unit || undefined : undefined,
+                    frequency: healthForm.record_type === "medication" ? healthForm.frequency || undefined : undefined,
+                    started_at: healthForm.record_type === "medication" ? healthForm.started_at || undefined : undefined,
+                    ended_at: healthForm.record_type === "medication" ? healthForm.ended_at || undefined : undefined,
                     recorded_at: `${healthForm.recorded_at}T12:00:00Z`,
                     attachment_id: attachment?.id,
                   },
@@ -192,6 +209,11 @@ export function CatCarePanel({
                         title: "",
                         notes: "",
                         weight_kg: "",
+                        dose_amount: "",
+                        dose_unit: "",
+                        frequency: "",
+                        started_at: today(timezone),
+                        ended_at: "",
                       });
                       setHealthAttachment(null);
                     },
@@ -245,6 +267,51 @@ export function CatCarePanel({
                   maxLength={160}
                 />
               </label>
+              {healthForm.record_type === "medication" && (
+                <>
+                  <div className="cat-care-form-row">
+                    <label>
+                      Dosis
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={healthForm.dose_amount}
+                        onChange={(event) => setHealthForm({ ...healthForm, dose_amount: event.target.value })}
+                        placeholder="Contoh: 0,5"
+                      />
+                    </label>
+                    <label>
+                      Satuan dosis
+                      <input
+                        value={healthForm.dose_unit}
+                        onChange={(event) => setHealthForm({ ...healthForm, dose_unit: event.target.value })}
+                        placeholder="ml, tablet, tetes"
+                        maxLength={32}
+                      />
+                    </label>
+                    <label>
+                      Frekuensi
+                      <input
+                        value={healthForm.frequency}
+                        onChange={(event) => setHealthForm({ ...healthForm, frequency: event.target.value })}
+                        placeholder="2x sehari"
+                        maxLength={80}
+                      />
+                    </label>
+                  </div>
+                  <div className="cat-care-form-row">
+                    <label>
+                      Mulai terapi
+                      <DateInput value={healthForm.started_at} onChange={(event) => setHealthForm({ ...healthForm, started_at: event.target.value })} />
+                    </label>
+                    <label>
+                      Selesai terapi
+                      <DateInput value={healthForm.ended_at} onChange={(event) => setHealthForm({ ...healthForm, ended_at: event.target.value })} />
+                    </label>
+                  </div>
+                </>
+              )}
               <div className="cat-care-form-row">
                 <label>
                   Berat (kg)
@@ -311,6 +378,12 @@ export function CatCarePanel({
                         )}
                       </small>
                       {record.notes && <p>{record.notes}</p>}
+                      {record.record_type === "medication" && (record.dose_amount || record.frequency) && (
+                        <p className="field-hint">
+                          {record.dose_amount ? `${record.dose_amount} ${record.dose_unit ?? ""}` : "Dosis sesuai catatan"}
+                          {record.frequency ? ` · ${record.frequency}` : ""}
+                        </p>
+                      )}
                     </div>
                     {record.weight_kg && <strong>{record.weight_kg} kg</strong>}
                   </article>

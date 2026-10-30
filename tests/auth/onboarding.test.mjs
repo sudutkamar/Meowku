@@ -21,6 +21,9 @@ test('auth page supports sign in and sign up through Supabase Auth', () => {
   assert.match(source, /auth\.resend/);
   assert.match(source, /friendlyAuthError/);
   assert.match(source, /bukan nama profil/);
+  assert.match(source, /Auth localhost dan Auth deploy/);
+  assert.match(source, /Supabase tidak bisa dihubungi/);
+  assert.match(source, /Buat akun di project ini/);
   assert.match(source, /Lupa password/);
   assert.match(source, /signInWithOtp/);
   assert.match(source, /shouldCreateUser: false/);

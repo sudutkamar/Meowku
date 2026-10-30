@@ -4,9 +4,12 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --configLoader runner",
+    "dev": "vite --configLoader runner --mode hosted",
+    "dev:local": "vite --configLoader runner --mode development",
+    "dev:hosted": "vite --configLoader runner --mode hosted",
     "build": "tsc -b && vite build --configLoader runner",
     "typecheck": "tsc -b",
+    "lint": "node scripts/lint.mjs",
     "test": "node --test tests/**/*.test.mjs",
     "preview": "npm run build && wrangler dev",
     "deploy": "npm run build && wrangler deploy"

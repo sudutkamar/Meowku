@@ -41,12 +41,20 @@ export function CatFoodExpensePanel({
     food_type: "dry" as "dry" | "wet" | "treat" | "supplement" | "other",
     life_stage: "all_life_stages" as
       "kitten" | "adult" | "senior" | "all_life_stages",
+    kcal_per_100g: "",
+    moisture_percent: "",
+    protein_percent: "",
+    fat_percent: "",
+    fiber_percent: "",
   });
   const [assignment, setAssignment] = useState({
     food_product_id: "",
     serving_amount: "",
     serving_unit: "gram" as "gram" | "ml" | "piece" | "sachet" | "can",
     feeding_frequency: "",
+    daily_kcal_target: "",
+    treat_percent: "",
+    water_ml_target: "",
     started_at: new Date().toISOString().slice(0, 10),
   });
   const [expense, setExpense] = useState({
@@ -74,6 +82,7 @@ export function CatFoodExpensePanel({
   const showFood = mode !== "expense";
   const showExpense = mode !== "food";
   useEffect(() => () => streamRef.current?.getTracks().forEach((track) => track.stop()), []);
+  function foodPayload() { return { ...food, kcal_per_100g: food.kcal_per_100g ? Number(food.kcal_per_100g) : undefined, moisture_percent: food.moisture_percent ? Number(food.moisture_percent) : undefined, protein_percent: food.protein_percent ? Number(food.protein_percent) : undefined, fat_percent: food.fat_percent ? Number(food.fat_percent) : undefined, fiber_percent: food.fiber_percent ? Number(food.fiber_percent) : undefined }; }
   async function startBarcodeScan() {
     setScanError(null);
     const BarcodeDetectorClass = (window as unknown as { BarcodeDetector?: new (options?: { formats: string[] }) => { detect: (video: HTMLVideoElement) => Promise<Array<{ rawValue: string }>> } }).BarcodeDetector;
@@ -98,7 +107,7 @@ export function CatFoodExpensePanel({
     setScanError(null);
     try { const base64 = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(",")[1] ?? ""); reader.onerror = () => reject(new Error("Foto label tidak bisa dibaca.")); reader.readAsDataURL(file); }); const result = await scanFood.mutateAsync({ imageBase64: base64 }); const record = await createScan.mutateAsync({ scan_type: "food_label", extracted_data: result }); setScanRecordId(record.id); setScanDraft(result); setFood((current) => ({ ...current, brand: result.brand, product_name: result.product_name, variant: result.variant ?? "", barcode: result.barcode ?? "", food_type: result.food_type })); } catch (error) { setScanError(error instanceof Error ? error.message : "Foto label gagal diproses."); }
   }
-  function confirmScan() { if (!scanDraft) return; createFood.mutate({ ...food, source: scanDraft.source }, { onSuccess: () => { if (scanRecordId) confirmScanRecord.mutate({ id: scanRecordId, extractedData: scanDraft }); setScanDraft(undefined); setScanRecordId(null); } }); }
+  function confirmScan() { if (!scanDraft) return; createFood.mutate({ ...foodPayload(), source: scanDraft.source }, { onSuccess: () => { if (scanRecordId) confirmScanRecord.mutate({ id: scanRecordId, extractedData: scanDraft }); setScanDraft(undefined); setScanRecordId(null); } }); }
   return (
     <section className="cat-care-grid cat-food-expense-grid">
       {showFood && (
@@ -118,7 +127,7 @@ export function CatFoodExpensePanel({
             className="cat-care-form"
             onSubmit={(event) => {
               event.preventDefault();
-              createFood.mutate(food, {
+              createFood.mutate(foodPayload(), {
                 onSuccess: () =>
                   setFood({
                     ...food,
@@ -182,6 +191,14 @@ export function CatFoodExpensePanel({
                 />
               </label>
             </div>
+            <div className="cat-care-form-row">
+              <label>Energi (kcal/100 g)<input type="number" min="0" step="0.01" value={food.kcal_per_100g} onChange={(event) => setFood({ ...food, kcal_per_100g: event.target.value })} placeholder="Dari label makanan" /></label>
+              <label>Protein (%)<input type="number" min="0" max="100" step="0.1" value={food.protein_percent} onChange={(event) => setFood({ ...food, protein_percent: event.target.value })} placeholder="Opsional" /></label>
+            </div>
+            <div className="cat-care-form-row">
+              <label>Lemak (%)<input type="number" min="0" max="100" step="0.1" value={food.fat_percent} onChange={(event) => setFood({ ...food, fat_percent: event.target.value })} placeholder="Opsional" /></label>
+              <label>Serat (%)<input type="number" min="0" max="100" step="0.1" value={food.fiber_percent} onChange={(event) => setFood({ ...food, fiber_percent: event.target.value })} placeholder="Opsional" /></label>
+            </div>
             {scanDraft && <div className="food-scan-draft"><div><strong>Cek hasil scan</strong><small>{scanDraft.source === "barcode" ? "Dari barcode" : "Dari foto label"} · belum disimpan</small></div><button className="primary" type="button" onClick={confirmScan} disabled={createFood.isPending}>Konfirmasi dan simpan</button></div>}
             <button
               className="secondary"
@@ -207,6 +224,9 @@ export function CatFoodExpensePanel({
                   : undefined,
                 serving_unit: assignment.serving_unit,
                 feeding_frequency: assignment.feeding_frequency || undefined,
+                daily_kcal_target: assignment.daily_kcal_target ? Number(assignment.daily_kcal_target) : undefined,
+                treat_percent: assignment.treat_percent ? Number(assignment.treat_percent) : undefined,
+                water_ml_target: assignment.water_ml_target ? Number(assignment.water_ml_target) : undefined,
                 started_at: assignment.started_at,
               });
             }}
@@ -268,6 +288,11 @@ export function CatFoodExpensePanel({
                 </select>
               </label>
             </div>
+            <div className="cat-care-form-row">
+              <label>Target energi/hari (kcal)<input type="number" min="1" step="0.1" value={assignment.daily_kcal_target} onChange={(event) => setAssignment({ ...assignment, daily_kcal_target: event.target.value })} placeholder="Diisi bersama dokter hewan" /></label>
+              <label>Batas treat (%)<input type="number" min="0" max="100" step="1" value={assignment.treat_percent} onChange={(event) => setAssignment({ ...assignment, treat_percent: event.target.value })} placeholder="Opsional" /></label>
+            </div>
+            <label>Target air/hari (ml)<input type="number" min="1" step="1" value={assignment.water_ml_target} onChange={(event) => setAssignment({ ...assignment, water_ml_target: event.target.value })} placeholder="Opsional" /></label>
             <button
               className="primary"
               type="submit"
@@ -302,6 +327,7 @@ export function CatFoodExpensePanel({
                       {item.serving_amount
                         ? `${item.serving_amount} ${item.serving_unit ?? ""}`
                         : "Takaran belum diisi"}
+                      {item.daily_kcal_target ? ` · target ${item.daily_kcal_target} kcal/hari` : ""}
                     </small>
                   </div>
                 </article>

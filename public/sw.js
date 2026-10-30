@@ -1,4 +1,4 @@
-const CACHE_NAME = 'meowku-shell-v2';
+const CACHE_NAME = 'meowku-shell-v3';
 const DEFAULT_ACTION_URL = '/app/riwayat-jadwal';
 
 function normalizeActionUrl(actionUrl) {
@@ -6,7 +6,7 @@ function normalizeActionUrl(actionUrl) {
 }
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(['/','/manifest.webmanifest','/icons/icon-192.png','/icons/icon-512.png','/UI/Meowku_Logo_Kucing_Jam_Transparent.webp'])).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(['/','/manifest.webmanifest','/icons/favicon-16.png','/icons/favicon-32.png','/icons/icon-192.png','/icons/icon-512.png','/UI/Meowku_Logo_Kucing_Jam_Transparent.webp'])).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
@@ -36,7 +36,8 @@ self.addEventListener('push', (event) => {
     badge: '/icons/icon-192.png',
     tag: payload.tag || 'meowku-notification',
     data: { actionUrl: normalizeActionUrl(payload.actionUrl) },
-    vibrate: [200, 100, 200],
+    silent: payload.silent === true,
+    vibrate: payload.silent === true ? undefined : [200, 100, 200],
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });

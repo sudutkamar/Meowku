@@ -1,0 +1,86 @@
+/* Operational panels added during the completeness audit. */
+.stock-movement-form {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.stock-movement-form label {
+  display: grid;
+  gap: 7px;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stock-movement-form input,
+.stock-movement-form select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #e2dcd5;
+  border-radius: 10px;
+  padding: 0 11px;
+  background: #fff;
+  color: #344054;
+  font: inherit;
+}
+
+.history-filters .text-action {
+  min-height: 38px;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .stock-movement-form label {
+  color: #f2dfd2;
+}
+
+[data-theme="dark"] .stock-movement-form input,
+[data-theme="dark"] .stock-movement-form select {
+  border-color: #59483b;
+  background: #211c19;
+  color: #fff6ef;
+}
+
+@media (max-width: 640px) {
+  .history-panel-heading {
+    display: grid;
+    gap: 12px;
+  }
+
+  .history-toolbar {
+    justify-content: stretch;
+  }
+
+  .history-toolbar .secondary {
+    width: 100%;
+  }
+
+  .history-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .history-filters label {
+    min-width: 0;
+  }
+
+  .history-filters .text-action {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 420px) {
+  .cat-care-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cat-summary-card,
+  .cat-summary-next {
+    padding: 16px;
+  }
+
+  .cat-summary-next button {
+    width: 100%;
+  }
+}

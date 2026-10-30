@@ -31,9 +31,10 @@ Deno.serve(async (request) => {
       if (memberError) throw memberError;
       const memberIds = (members ?? []).map((member) => member.user_id);
       if (!memberIds.length) continue;
-      const { data: preferences, error: preferenceError } = await admin.from('notification_preferences').select('user_id, due_reminders').eq('household_id', householdId).in('user_id', memberIds);
+      const { data: preferences, error: preferenceError } = await admin.from('notification_preferences').select('user_id, due_reminders, sound_enabled').eq('household_id', householdId).in('user_id', memberIds);
       if (preferenceError) throw preferenceError;
       const disabled = new Set((preferences ?? []).filter((preference) => preference.due_reminders === false).map((preference) => preference.user_id));
+      const silent = new Set((preferences ?? []).filter((preference) => preference.sound_enabled === false).map((preference) => preference.user_id));
       const rows = memberIds.filter((userId) => !disabled.has(userId)).flatMap((userId) => householdOccurrences.map((occurrence) => ({ household_id: householdId, user_id: userId, occurrence_id: occurrence.id, type: 'due_reminder', title: `Waktunya ${occurrence.schedules?.title ?? 'perawatan kucing'}`, body: `${occurrence.schedule_slots?.label ?? 'Jadwal'} perlu dilakukan sekarang.`, action_url: '/app/riwayat-jadwal' })));
       if (!rows.length) continue;
       const { data: inserted, error: insertError } = await admin.from('notifications').upsert(rows, { onConflict: 'user_id,occurrence_id,type', ignoreDuplicates: true }).select('id, user_id, household_id, occurrence_id, title, body, action_url');
@@ -44,7 +45,7 @@ Deno.serve(async (request) => {
         if (subscriptionError) throw subscriptionError;
         for (const subscription of subscriptions ?? []) {
           try {
-            await webpush.sendNotification(subscription.subscription, JSON.stringify({ title: notification.title, body: notification.body, actionUrl: notification.action_url, tag: notification.id }));
+            await webpush.sendNotification(subscription.subscription, JSON.stringify({ title: notification.title, body: notification.body, actionUrl: notification.action_url, tag: notification.id, silent: silent.has(notification.user_id) }));
             delivered += 1;
           } catch (error) {
             const statusCode = (error as { statusCode?: number }).statusCode;

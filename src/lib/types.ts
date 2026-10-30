@@ -9,6 +9,12 @@ export type Cat = {
   breed: string | null;
   weight_kg: number | null;
   notes: string | null;
+  sex: 'female' | 'male' | 'unknown';
+  sterilized: boolean;
+  birth_date: string | null;
+  body_condition_score: number | null;
+  microchip_number: string | null;
+  allergies: string | null;
   photo_url: string | null;
   is_active: boolean;
 };
@@ -31,5 +37,7 @@ export type CatalogItem = {
   name: string;
   category: string;
   notes: string;
+  stock_quantity: number;
+  stock_unit: string;
   is_active: boolean;
 };

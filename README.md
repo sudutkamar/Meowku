@@ -33,13 +33,15 @@ npm install
 supabase start
 # terminal 2
 supabase functions serve invite-household-member
-# terminal 3
+# terminal 3 — memakai Auth/data hosted dari localhost
 npm run dev
 ```
 
-Untuk development lokal, gunakan `.env.development.local`; file ini menunjuk ke Supabase CLI lokal. Build production membaca `.env`, sehingga URL hosted tidak boleh tertimpa oleh `.env.local`. Jangan commit file environment, service-role key, password database, private VAPID key, atau secret Edge Function.
+Perintah `npm run dev` memakai backend hosted dari `.env` agar akun Auth yang dipakai di deploy juga bisa dipakai dari `localhost`. Ini tetap hanya menjalankan aplikasi di localhost dan tidak melakukan deploy. Untuk development yang benar-benar terisolasi dengan Supabase CLI lokal, jalankan `npm run dev:local`; perintah itu membaca `.env.development.local`. Build production membaca `.env`, sehingga URL hosted tidak boleh tertimpa oleh `.env.local`. Jangan commit file environment, service-role key, password database, private VAPID key, atau secret Edge Function.
 
 Supabase lokal menyimpan email signup dan undangan di Mailpit pada `http://127.0.0.1:54334`. Flow konfirmasi email lokal aktif melalui `supabase/config.toml`; untuk project hosted, aktifkan email confirmation dan SMTP di pengaturan Auth project tersebut.
+
+Penting: Auth localhost dan Auth hosted adalah database yang berbeda. Akun yang ada di deploy hanya tersedia dari localhost ketika `npm run dev` (mode hosted) digunakan. Untuk menguji localhost secara terisolasi, jalankan `npm run dev:local`, buat akun dari tombol `Daftar sekarang`, lalu buka email konfirmasi di Mailpit. Jangan melakukan perubahan data berisiko dari mode hosted.
 
 Untuk pemeriksaan lokal:
 
@@ -57,4 +59,4 @@ Instalasi PWA dan push notification pada HP membutuhkan alamat HTTPS yang diperc
 
 ## Status
 
-Konfigurasi backend, akun, dan data operasional sengaja tidak dipublikasikan di README.
+Konfigurasi backend, akun, data operasional, dan catatan audit internal sengaja tidak dipublikasikan di README.

@@ -7,11 +7,17 @@ function authRedirectUrl() {
 }
 
 function friendlyAuthError(mode: 'signin' | 'signup' | 'reset', error: { message: string }) {
+  if (/failed to fetch|network error|fetch failed|network request failed/i.test(error.message)) {
+    return 'Supabase tidak bisa dihubungi. Pastikan Supabase lokal sudah berjalan untuk localhost, atau URL dan publishable key Supabase production sudah terpasang pada environment deploy.';
+  }
   if (mode === 'signin' && /invalid login credentials/i.test(error.message)) {
-    return 'Email atau password tidak cocok. Gunakan email yang terdaftar di Auth, bukan nama profil. Jika akun dibuat lewat undangan, buka link undangan atau gunakan “Lupa password?” untuk membuat password baru.';
+    return 'Email atau password tidak cocok di project Supabase yang sedang aktif. Data di profiles atau tabel aplikasi tidak otomatis menjadi akun login; password hanya diperiksa di auth.users. Auth localhost dan Auth deploy bisa memakai database yang berbeda. Gunakan email yang terdaftar di Auth, bukan nama profil; jika akun dibuat lewat undangan, buka link undangan atau gunakan “Lupa password?” untuk membuat password baru.';
   }
   if (mode === 'signin' && /user not found|email.*not found/i.test(error.message)) {
     return 'Email ini belum terdaftar di Auth. Periksa kembali emailnya atau buat akun baru.';
+  }
+  if (mode === 'signup' && /already registered|already exists|user already/i.test(error.message)) {
+    return 'Email ini sudah terdaftar di Auth. Kembali ke Masuk atau gunakan “Lupa password?” jika passwordnya tidak diketahui.';
   }
   return error.message;
 }
@@ -27,6 +33,7 @@ export function AuthPage() {
   const [submitting, setSubmitting] = useState(false);
   const [sendingMagicLink, setSendingMagicLink] = useState(false);
   const [resending, setResending] = useState(false);
+  const [showSignupShortcut, setShowSignupShortcut] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,6 +42,7 @@ export function AuthPage() {
     setError('');
     setMessage('');
     setConfirmationEmail('');
+    setShowSignupShortcut(false);
     let requestError: { message: string } | null = null;
     let signedUpWithoutSession = false;
     const normalizedEmail = email.trim().toLowerCase();
@@ -59,6 +67,7 @@ export function AuthPage() {
         setConfirmationEmail(normalizedEmail);
         setError('Email kamu belum dikonfirmasi. Kirim ulang email konfirmasi lalu buka tautannya.');
       } else {
+        setShowSignupShortcut(mode === 'signin' && /invalid login credentials|user not found|email.*not found/i.test(requestError.message));
         setError(friendlyAuthError(mode, requestError));
       }
     } else if (mode === 'signup' && !signedUpWithoutSession) setMessage('Akun berhasil dibuat dan kamu sudah masuk.');
@@ -121,6 +130,7 @@ export function AuthPage() {
       </div>
       {error && <div className="auth-error" role="alert">{error}</div>}
       {message && <div className="auth-message" role="status">{message}</div>}
+      {showSignupShortcut && mode === 'signin' && <button type="button" className="auth-switch" onClick={() => { setMode('signup'); setError(''); setMessage(''); setConfirmationEmail(''); setShowSignupShortcut(false); }}>Buat akun di project ini</button>}
       {confirmationEmail && <button type="button" className="auth-switch" disabled={resending} onClick={() => void resendConfirmation()}>{resending ? 'Mengirim ulang...' : 'Kirim ulang email konfirmasi'}</button>}
       <button type="submit" className="primary auth-submit" disabled={submitting}>{submitting ? 'Memproses...' : mode === 'signin' ? 'Masuk ke akun' : mode === 'reset' ? 'Kirim tautan reset' : 'Buat akun'}</button>
       {mode === 'signin' && <button type="button" className="auth-switch" disabled={sendingMagicLink} onClick={() => void sendMagicLink()}>{sendingMagicLink ? 'Mengirim link masuk...' : 'Masuk dengan link email'}</button>}
