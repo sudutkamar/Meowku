@@ -7,7 +7,7 @@ import { PageSkeleton } from '../../components/Skeleton';
 import { householdLocalDate } from '../dashboard/useDashboard';
 import { useCompleteOccurrence, useScheduleMembers, useScheduleOccurrences, useScheduleTargetOptions, useSchedules, type OccurrenceFilter, type ScheduleOccurrence, type ScheduleRecord } from '../schedules/useSchedules';
 
-const filters: Array<{ value: OccurrenceFilter; label: string }> = [{ value: 'Today', label: 'Hari ini' }, { value: 'This Week', label: 'Minggu ini' }, { value: 'This Month', label: 'Bulan ini' }];
+const filters: Array<{ value: OccurrenceFilter; label: string }> = [{ value: 'Today', label: 'Hari ini' }, { value: 'Tomorrow', label: 'Besok' }, { value: 'This Week', label: 'Minggu ini' }, { value: 'This Month', label: 'Bulan ini' }];
 const categoryFilters = [{ value: 'all', label: 'Semua kategori' }, { value: 'feeding', label: 'Makan' }, { value: 'litter', label: 'Litter box' }, { value: 'medicine', label: 'Obat' }, { value: 'other', label: 'Lainnya' }];
 const categoryLabels: Record<string, string> = { feeding: 'Makan', litter: 'Litter box', medicine: 'Obat', other: 'Lainnya' };
 
@@ -103,7 +103,7 @@ function fallbackTomorrowOccurrences(schedules: ScheduleRecord[], date: string, 
       target_key: target.target_key,
       slot_id: slot.id ?? `${schedule.id}-${slot.sort_order}`,
       local_date: date,
-      scheduled_at: scheduleTimeToIso(date, slot.local_time, timezone),
+      scheduled_at: scheduleTimeToIso(date, slot.local_time, schedule.timezone || timezone),
       assigned_to: null,
       assignee_id: null,
       completed_at: null,

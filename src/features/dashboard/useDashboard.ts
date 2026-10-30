@@ -23,7 +23,7 @@ export type DashboardData = {
   todayOccurrences: DashboardOccurrence[];
   completedToday: number;
   completionRate: number | null;
-  recentActivity: Array<{ id: string; action: string; entity_type: string; actor_id: string; created_at: string }>;
+  recentActivity: Array<{ id: string; action: string; entity_type: string; actor_id: string | null; created_at: string }>;
   perCatProgress: Array<{ id: string; name: string; completed: number; total: number; rate: number | null }>;
   attentionItems: Array<{ kind: 'overdue' | 'vaccination'; label: string; detail: string; catId?: string }>;
   today: string;

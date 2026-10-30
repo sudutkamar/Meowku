@@ -29,11 +29,17 @@ Data bisnis aplikasi berasal dari Supabase. Tidak ada data contoh atau kredensia
 
 ```bash
 npm install
-cp .env.example .env
+# terminal 1
+supabase start
+# terminal 2
+supabase functions serve invite-household-member
+# terminal 3
 npm run dev
 ```
 
-Isi `.env` dengan konfigurasi Supabase milik lingkungan lokal atau project kamu sendiri. Jangan commit `.env`, service-role key, password database, private VAPID key, atau secret Edge Function.
+Untuk development lokal, gunakan `.env.development.local`; file ini menunjuk ke Supabase CLI lokal. Build production membaca `.env`, sehingga URL hosted tidak boleh tertimpa oleh `.env.local`. Jangan commit file environment, service-role key, password database, private VAPID key, atau secret Edge Function.
+
+Supabase lokal menyimpan email signup dan undangan di Mailpit pada `http://127.0.0.1:54334`. Flow konfirmasi email lokal aktif melalui `supabase/config.toml`; untuk project hosted, aktifkan email confirmation dan SMTP di pengaturan Auth project tersebut.
 
 Untuk pemeriksaan lokal:
 
@@ -45,18 +51,10 @@ npm run build
 
 ## Deployment
 
-Versi production saat ini tersedia di [meowku.panda-12b.workers.dev](https://meowku.panda-12b.workers.dev). Hosting memakai Cloudflare Pages versi terbaru yang berjalan di platform Workers, dengan asset statis dari folder `dist` dan fallback SPA untuk route seperti `/app`.
-
-Untuk deployment berikutnya setelah autentikasi Cloudflare:
-
-```bash
-npm run deploy
-```
-
-Perintah tersebut menjalankan build production lalu mengunggah asset ke project Cloudflare `meowku`. Variabel `VITE_*` tetap harus diisi dari environment deployment yang sesuai; jangan menaruh secret server-side di frontend.
+Deployment internet tidak dilakukan dari workflow ini. Validasi perubahan dilakukan di localhost dengan build Vite dan Supabase lokal.
 
 Instalasi PWA dan push notification pada HP membutuhkan alamat HTTPS yang dipercaya perangkat. `http://localhost` hanya menjadi pengecualian pada perangkat yang menjalankan server.
 
 ## Status
 
-Project ini sudah memiliki deployment production untuk preview. Konfigurasi backend, akun, dan data operasional sengaja tidak dipublikasikan di README.
+Konfigurasi backend, akun, dan data operasional sengaja tidak dipublikasikan di README.

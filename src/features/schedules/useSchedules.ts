@@ -51,7 +51,7 @@ export function sortScheduleSlots(slots: ScheduleSlot[]) {
 }
 
 const schedulesKey = (householdId?: string) => ['schedules', householdId];
-const occurrenceKey = (householdId?: string, timezone?: string, filter?: OccurrenceFilter) => ['schedule-occurrences', householdId, timezone, filter];
+const occurrenceKey = (householdId?: string, timezone?: string, filter?: OccurrenceFilter, anchorDate?: string) => ['schedule-occurrences', householdId, timezone, filter, anchorDate];
 const targetOptionsKey = (householdId?: string) => ['schedule-target-options', householdId];
 
 function scheduledAt(input: ScheduleInput) {
@@ -145,32 +145,29 @@ export function useScheduleTargetOptions(householdId?: string) {
 }
 
 export function useScheduleOccurrences(householdId: string | undefined, timezone: string, filter: OccurrenceFilter) {
+  const anchorDate = householdLocalDate(timezone);
   return useQuery({
-    queryKey: occurrenceKey(householdId, timezone, filter),
+    queryKey: occurrenceKey(householdId, timezone, filter, anchorDate),
     enabled: Boolean(supabase && householdId),
     queryFn: async (): Promise<ScheduleOccurrence[]> => {
       if (!supabase || !householdId) throw new Error('Household belum tersedia.');
       const range = rangeFor(filter, timezone);
-      // Jadwal besok punya preview berbasis definisi aktif di ScheduleHistoryPage.
-      // Jangan blokir preview hanya karena backfill occurrence gagal/terlambat;
-      // occurrence yang sudah ada tetap dibaca di bawah, lalu page menambahkan
-      // baris yang belum tersinkron dari definisi Supabase.
-      if (filter !== 'Tomorrow') {
-        const { error: generationError } = await supabase.rpc('generate_schedule_occurrences', {
-          requested_household_id: householdId,
-          range_start: range.from,
-          range_end: range.to,
-        });
-        if (generationError) throw generationError;
-      }
+      // Generate every requested range, including Tomorrow. This is idempotent
+      // and ensures Next Up can read the same occurrence rows as the checklist.
+      const { error: generationError } = await supabase.rpc('generate_schedule_occurrences', {
+        requested_household_id: householdId,
+        range_start: range.from,
+        range_end: range.to,
+      });
+      if (generationError) throw generationError;
       const [occurrences, assignees] = await Promise.all([
         supabase.from('schedule_occurrences').select('*, schedules!inner(title, category, custom_category, status, is_active, start_date, end_date, repeat_interval, repeat_unit), schedule_slots(label, local_time)').eq('household_id', householdId).eq('schedules.is_active', true).eq('schedules.status', 'active').is('archived_at', null).gte('local_date', range.from).lte('local_date', range.to).order('local_date').order('scheduled_at'),
         supabase.from('household_assignees').select('id, display_name').eq('household_id', householdId).eq('is_active', true),
       ]);
       // Next Up tetap dapat dirender dari definisi jadwal aktif bila occurrence
       // atau daftar assignee belum tersedia karena backfill/schema lama.
-      if (occurrences.error && filter !== 'Tomorrow') throw occurrences.error;
-      if (assignees.error && filter !== 'Tomorrow') throw assignees.error;
+      if (occurrences.error) throw occurrences.error;
+      if (assignees.error) throw assignees.error;
       const names = new Map((assignees.data ?? []).map((assignee) => [assignee.id, { display_name: assignee.display_name }]));
       return (occurrences.data ?? []).map((occurrence) => ({ ...occurrence, household_assignees: occurrence.assignee_id ? names.get(occurrence.assignee_id) ?? null : null })) as unknown as ScheduleOccurrence[];
     },

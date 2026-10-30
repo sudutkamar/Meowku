@@ -4,6 +4,7 @@ import {
   ChevronRight,
   ChevronDown,
   ClipboardList,
+  Database,
   Clock3,
   FileBarChart,
   Home,
@@ -26,6 +27,7 @@ import { NotificationBell } from "./NotificationBell";
 import { UIPreferencesProvider, useUIPreferences } from "./UIPreferences";
 import { LanguageRuntime } from "./LanguageRuntime";
 import type { Household } from "../lib/types";
+import { supabase } from "../lib/supabase";
 import {
   fetchProfile,
   ProfileSettings,
@@ -41,6 +43,7 @@ export const navigation = [
   ["Laporan", FileBarChart],
   ["Pengaturan Jadwal", Settings],
   ["Pengguna", Users],
+  ["Database", Database],
   ["Pengaturan", Settings],
 ] as const satisfies readonly (readonly [string, LucideIcon])[];
 
@@ -55,6 +58,7 @@ const englishLabels: Record<string, string> = {
   Laporan: "Reports",
   "Pengaturan Jadwal": "Schedule Settings",
   Pengguna: "Members",
+  Database: "Database",
   Pengaturan: "Settings",
 };
 type AppShellProps = {
@@ -98,6 +102,7 @@ function ShellContent({
     "/app/laporan": "Laporan",
     "/app/pengaturan-jadwal": "Pengaturan Jadwal",
     "/app/pengguna": "Pengguna",
+    "/app/database-pengguna": "Database",
     "/app/pengaturan": "Pengaturan",
   }).find(([path]) => location.pathname === path)?.[1] ?? "Dashboard";
   const profile = useQuery({
@@ -105,7 +110,19 @@ function ShellContent({
     enabled: Boolean(email),
     queryFn: fetchProfile,
   });
+  const householdAccess = useQuery({
+    queryKey: ["household-access", householdId],
+    enabled: Boolean(supabase && householdId),
+    queryFn: async () => {
+      if (!supabase) return null;
+      const { data, error } = await supabase.rpc("household_access", { requested_household_id: householdId });
+      if (error) throw error;
+      return data?.[0] ?? null;
+    },
+  });
   const isEnglish = language === "en";
+  const canAccessAdmin = householdAccess.data?.role === 'owner' || householdAccess.data?.role === 'admin';
+  const adminNavigation = new Set(['Laporan', 'Pengaturan Jadwal', 'Pengguna', 'Database', 'Pengaturan']);
   const isScheduleRoute = activePage === "Jadwal" || activePage === "Riwayat Jadwal";
   useEffect(() => {
     if (isScheduleRoute) setScheduleOpen(true);
@@ -150,6 +167,7 @@ function ShellContent({
     Laporan: "/app/laporan",
     "Pengaturan Jadwal": "/app/pengaturan-jadwal",
     Pengguna: "/app/pengguna",
+    Database: "/app/database-pengguna",
     Pengaturan: "/app/pengaturan",
   };
   const navigate = (label: string) => {
@@ -161,7 +179,9 @@ function ShellContent({
       id="primary-navigation"
       aria-label={isEnglish ? "Main navigation" : "Navigasi utama"}
     >
-      {navigation.map(([label, Icon], index) => (
+      {navigation.map(([label, Icon], index) => {
+        if (adminNavigation.has(label) && !canAccessAdmin) return null;
+        return (
         <span key={label}>
           {index === 6 && <div className="nav-label">ADMIN</div>}
           {label === "Jadwal" ? <>
@@ -193,7 +213,8 @@ function ShellContent({
             <span className="nav-label-text">{labelFor(label)}</span>
           </button>}
         </span>
-      ))}
+        );
+      })}
     </nav>
   );
   const mobileNavigation = [

@@ -16,6 +16,7 @@ test("responsive shell owns all ten Indonesian navigation entries", () => {
     "Laporan",
     "Pengaturan Jadwal",
     "Pengguna",
+    "Database",
     "Pengaturan",
   ]) {
     assert.match(source, new RegExp(label));

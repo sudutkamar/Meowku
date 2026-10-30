@@ -7,7 +7,7 @@ export async function fetchProfile() {
   const { data: auth, error: authError } = await supabase.auth.getUser();
   if (authError) throw authError;
   if (!auth.user) throw new Error('Sesi pengguna tidak ditemukan.');
-  const { data, error } = await supabase.from('profiles').select('id, full_name, avatar_url').eq('id', auth.user.id).single();
+  const { data, error } = await supabase.from('profiles').select('id, full_name, avatar_url, role').eq('id', auth.user.id).single();
   if (error) throw error;
   return { ...data, email: auth.user.email ?? '' };
 }

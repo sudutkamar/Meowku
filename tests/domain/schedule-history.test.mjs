@@ -12,10 +12,10 @@ test('dashboard checklist opens dedicated schedule history instead of schedule c
   assert.match(routes, /path: ['"]\/riwayat-jadwal['"]/);
 });
 
-test('schedule history exposes today, week, month filters and assignment labels', () => {
+test('schedule history exposes today, tomorrow, week, month filters and assignment labels', () => {
   const page = read('src/features/schedule-history/ScheduleHistoryPage.tsx');
   const hook = read('src/features/schedules/useSchedules.ts');
-  for (const label of ['Hari ini', 'Minggu ini', 'Bulan ini', 'Petugas:', 'Selesai oleh:', 'Belum ditugaskan']) assert.match(page, new RegExp(label));
+  for (const label of ['Hari ini', 'Besok', 'Minggu ini', 'Bulan ini', 'Petugas:', 'Selesai oleh:', 'Belum ditugaskan']) assert.match(page, new RegExp(label));
   assert.match(page, /title="Jadwal saya"/);
   assert.match(page, /useScheduleOccurrences/);
   assert.match(page, /useScheduleMembers/);
@@ -81,8 +81,19 @@ test('tomorrow preview keeps database occurrences and does not depend on client 
   const hook = read('src/features/schedules/useSchedules.ts');
   assert.match(page, /const actual = tomorrowOccurrences\.data \?\? \[\];/);
   assert.doesNotMatch(page, /tomorrowOccurrences\.data \?\? \[\]\)\.filter/);
-  assert.match(hook, /if \(filter !== 'Tomorrow'\)/);
+  assert.match(hook, /generate_schedule_occurrences/);
+  assert.match(hook, /if \(generationError\) throw generationError/);
   assert.match(hook, /eq\('schedules\.status', 'active'\)/);
-  assert.match(hook, /occurrences\.error && filter !== 'Tomorrow'/);
-  assert.match(hook, /assignees\.error && filter !== 'Tomorrow'/);
+  assert.match(hook, /if \(occurrences\.error\) throw occurrences\.error/);
+  assert.match(hook, /if \(assignees\.error\) throw assignees\.error/);
+});
+
+test('future occurrence repair updates only incomplete future rows and preserves history', () => {
+  const migration = read('supabase/migrations/20261028000300_repair_future_schedule_occurrences.sql');
+  const hook = read('src/features/schedules/useSchedules.ts');
+  assert.match(migration, /on conflict \(schedule_id, target_key, local_date, slot_id\) do update/i);
+  assert.match(migration, /occurrence\.completed_at is null/);
+  assert.match(migration, /occurrence\.archived_at is null/);
+  assert.match(migration, /occurrence\.local_date >=/);
+  assert.match(hook, /occurrenceKey\(householdId, timezone, filter, anchorDate\)/);
 });

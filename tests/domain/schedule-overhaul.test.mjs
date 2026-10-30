@@ -26,6 +26,17 @@ test('schedule generation covers daily slots, selected weekly days, and monthly 
   assert.match(migration, /on conflict \(schedule_id, target_key, local_date, slot_id\) do nothing/i);
 });
 
+test('one-month finite ranges are normalized to daily schedules', () => {
+  const migration = read('supabase/migrations/20261029000200_normalize_month_range_schedules.sql');
+  const page = read('src/features/schedules/SchedulesPage.tsx');
+  assert.match(migration, /new\.repeat_unit := 'day'/);
+  assert.match(migration, /new\.end_date <= \(new\.start_date \+ interval '1 month'\)::date/);
+  assert.match(migration, /before insert or update/);
+  assert.match(migration, /where repeat_unit = 'month'/);
+  assert.match(page, /normalizeMonthRangeInput/);
+  assert.match(page, /submittedForm/);
+});
+
 test('create schedule validates targets and writes slots and targets atomically', () => {
   const migration = read(migrationPath);
   assert.match(migration, /create or replace function public\.create_schedule\(/);

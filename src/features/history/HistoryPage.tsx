@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { PageHeader } from '../../components/PageHeader';
 import { PageSkeleton } from '../../components/Skeleton';
 
-type AuditEvent = { id: string; actor_id: string; action: string; entity_type: string; entity_id: string | null; metadata: Record<string, unknown>; created_at: string };
+type AuditEvent = { id: string; actor_id: string | null; action: string; entity_type: string; entity_id: string | null; metadata: Record<string, unknown>; created_at: string };
 
 const actionLabels: Record<string, string> = {
   completed: 'Tugas diselesaikan',
@@ -61,7 +61,7 @@ export function HistoryPage({ household }: { household: Household }) {
       return (data ?? []) as AuditEvent[];
     },
   });
-  const actorIds = [...new Set((history.data ?? []).map((event) => event.actor_id).filter(Boolean))];
+  const actorIds = [...new Set((history.data ?? []).map((event) => event.actor_id).filter((actorId): actorId is string => Boolean(actorId)))];
   const actors = useQuery({
     queryKey: ['history-actors', household.id, actorIds],
     enabled: Boolean(supabase && actorIds.length),
@@ -81,7 +81,7 @@ export function HistoryPage({ household }: { household: Household }) {
     <PageHeader eyebrow="MEOWKU / HISTORI" title="Histori aktivitas" description="Catatan perubahan household yang tidak dapat diubah atau dihapus." />
     <section className="panel history-panel">
       <div className="history-panel-heading"><div><p className="eyebrow">RIWAYAT</p><h2>Aktivitas terbaru</h2></div><span className="count-badge">{history.data?.length ?? 0} aktivitas</span></div>
-      {history.data?.length ? <div className="history-timeline">{history.data.map((event) => <article className={`history-event history-event-${event.action}`} key={event.id}><div className="history-event-icon"><EventIcon action={event.action} entityType={event.entity_type} /></div><div className="history-event-body"><div className="history-event-top"><div className="history-event-label"><strong>{formatAuditAction(event.action)}</strong><span>{formatEntityType(event.entity_type)}</span></div><time dateTime={event.created_at}>{dateFormatter.format(new Date(event.created_at))}</time></div><p>{eventDescription(event)}</p><div className="history-event-meta"><span>Oleh <b>{actorNames.get(event.actor_id) ?? 'Anggota household'}</b></span>{event.entity_id && <span className="history-event-id">ID tersimpan</span>}</div></div></article>)}</div> : <div className="empty"><Activity /><h2>Belum ada histori</h2><p>Aktivitas baru bakal muncul di sini.</p></div>}
+      {history.data?.length ? <div className="history-timeline">{history.data.map((event) => <article className={`history-event history-event-${event.action}`} key={event.id}><div className="history-event-icon"><EventIcon action={event.action} entityType={event.entity_type} /></div><div className="history-event-body"><div className="history-event-top"><div className="history-event-label"><strong>{formatAuditAction(event.action)}</strong><span>{formatEntityType(event.entity_type)}</span></div><time dateTime={event.created_at}>{dateFormatter.format(new Date(event.created_at))}</time></div><p>{eventDescription(event)}</p><div className="history-event-meta"><span>Oleh <b>{event.actor_id ? actorNames.get(event.actor_id) ?? 'Anggota household' : 'Akun dihapus'}</b></span>{event.entity_id && <span className="history-event-id">ID tersimpan</span>}</div></div></article>)}</div> : <div className="empty"><Activity /><h2>Belum ada histori</h2><p>Aktivitas baru bakal muncul di sini.</p></div>}
     </section>
   </section>;
 }

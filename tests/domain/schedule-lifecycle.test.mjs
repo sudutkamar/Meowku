@@ -37,6 +37,7 @@ test('schedule hooks expose timezone-aware filters and lifecycle mutations', () 
 test('schedule UI exposes filter tabs and confirmation before archive/delete actions', () => {
   const source = read('src/features/schedules/SchedulesPage.tsx');
   assert.match(source, /Hari ini/);
+  assert.match(source, /Besok/);
   assert.match(source, /Minggu ini/);
   assert.match(source, /Bulan ini/);
   assert.match(source, /confirm/);

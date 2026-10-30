@@ -8,12 +8,13 @@ type ConfirmDialogProps = {
   confirmLabel: string;
   destructive?: boolean;
   pending?: boolean;
+  confirmDisabled?: boolean;
   children?: ReactNode;
   onCancel: () => void;
   onConfirm: () => void;
 };
 
-export function ConfirmDialog({ open, title, description, confirmLabel, destructive = false, pending = false, children, onCancel, onConfirm }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, title, description, confirmLabel, destructive = false, pending = false, confirmDisabled = false, children, onCancel, onConfirm }: ConfirmDialogProps) {
   const cancelRef = useRef<HTMLButtonElement>(null);
   const onCancelRef = useRef(onCancel);
   const pendingRef = useRef(pending);
@@ -47,7 +48,7 @@ export function ConfirmDialog({ open, title, description, confirmLabel, destruct
       {children}
       <div className="dialog-actions">
         <button ref={cancelRef} className="secondary" type="button" onClick={onCancel} disabled={pending}>Batal</button>
-        <button className={destructive ? 'danger-action' : 'primary'} type="button" onClick={onConfirm} disabled={pending}>{pending ? 'Memproses...' : confirmLabel}</button>
+        <button className={destructive ? 'danger-action' : 'primary'} type="button" onClick={onConfirm} disabled={pending || confirmDisabled}>{pending ? 'Memproses...' : confirmLabel}</button>
       </div>
     </section>
   </div>, document.body);

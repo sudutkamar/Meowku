@@ -5,6 +5,7 @@ body { overflow-x: hidden; }
 .panel, .data-list, .schedule-form, .schedule-results, .entity-form-card, .member-list-panel { min-width: 0; }
 button, input, select, textarea { max-width: 100%; }
 img, svg, video { max-width: 100%; }
+.auth-page, .auth-shell, .auth-card, .invitation-card { min-width: 0; max-width: 100%; }
 :root {
   --meowku-page-inline: clamp(10px, 2.4vw, 32px);
   --meowku-section-gap: clamp(12px, 1.8vw, 22px);

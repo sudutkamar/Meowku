@@ -1,8 +1,12 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const configuredOrigins = (Deno.env.get('APP_ORIGIN') ?? '').split(',').map((origin) => origin.trim()).filter(Boolean);
+function normalizeOrigin(value: string) {
+  try { return new URL(value).origin; } catch { return value.replace(/\/+$/, ''); }
+}
+
+const configuredOrigins = (Deno.env.get('APP_ORIGIN') ?? '').split(',').map((origin) => normalizeOrigin(origin.trim())).filter(Boolean);
 const allowedOrigins = new Set(['http://localhost:5173', 'http://127.0.0.1:5173', 'https://meowku.panda-12b.workers.dev', ...configuredOrigins]);
-const appOrigin = configuredOrigins[0] ?? 'https://meowku.panda-12b.workers.dev';
+const defaultAppOrigin = configuredOrigins[0] ?? 'https://meowku.panda-12b.workers.dev';
 const corsHeaders = (request: Request) => {
   const origin = request.headers.get('Origin') ?? '';
   return {
@@ -15,22 +19,37 @@ const corsHeaders = (request: Request) => {
 };
 const reply = (request: Request, body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: corsHeaders(request) });
 
+function redirectOrigin(request: Request) {
+  const origin = normalizeOrigin(request.headers.get('Origin')?.trim() ?? '');
+  return allowedOrigins.has(origin) ? origin : defaultAppOrigin;
+}
+
 function createAdminClient() {
+  // Supabase runtimes expose the legacy service-role secret by default, while
+  // newer projects may provide the JSON secret-key bundle instead. Support
+  // both server-only names so an SMTP setup cannot silently break invitations.
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.trim();
   const secretKeys = Deno.env.get('SUPABASE_SECRET_KEYS');
-  if (!secretKeys) throw new Error('Supabase secret key untuk email belum dikonfigurasi.');
-  let parsed: Record<string, string>;
-  try {
-    parsed = JSON.parse(secretKeys) as Record<string, string>;
-  } catch {
-    throw new Error('Konfigurasi secret key Supabase tidak valid.');
+  let bundledKey = '';
+  if (!serviceRoleKey && secretKeys) {
+    try {
+      const parsed = JSON.parse(secretKeys) as Record<string, string>;
+      bundledKey = parsed.default ?? Object.values(parsed)[0] ?? '';
+    } catch {
+      throw new Error('Konfigurasi secret key Supabase tidak valid.');
+    }
   }
-  const secretKey = parsed.default ?? Object.values(parsed)[0];
+  const secretKey = serviceRoleKey || bundledKey;
   if (!secretKey) throw new Error('Supabase secret key untuk email belum dikonfigurasi.');
   return createClient(Deno.env.get('SUPABASE_URL')!, secretKey, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
+function isAlreadyRegisteredError(error: { message?: string } | null) {
+  return /already been registered|already registered/i.test(error?.message ?? '');
+}
+
 Deno.serve(async (request) => {
-  if (request.method === 'OPTIONS') return new Response('ok', { status: 204, headers: corsHeaders(request) });
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request) });
   try {
     const authorization = request.headers.get('Authorization');
     if (!authorization) return reply(request, { error: 'Unauthorized' }, 401);
@@ -44,15 +63,36 @@ Deno.serve(async (request) => {
     const { data: membership, error: membershipError } = await client.from('household_members').select('household_id, role').eq('household_id', body.householdId).eq('user_id', auth.user.id).eq('is_active', true).in('role', ['owner', 'admin']).maybeSingle();
     if (membershipError) throw membershipError;
     if (!membership) return reply(request, { error: 'Hanya owner atau admin yang dapat mengundang anggota.' }, 403);
+    const { data: existingInvitation, error: existingInvitationError } = await client
+      .from('household_invitations')
+      .select('id')
+      .eq('household_id', membership.household_id)
+      .eq('email', email)
+      .eq('status', 'pending')
+      .maybeSingle();
+    if (existingInvitationError) throw existingInvitationError;
+    if (existingInvitation) return reply(request, { error: 'Undangan untuk email ini masih pending. Batalkan undangan lama sebelum mengirim ulang.' }, 409);
     const admin = createAdminClient();
-    const { data, error } = await client.from('household_invitations').insert({ household_id: membership.household_id, email, role: body.role, invited_by: auth.user.id }).select().single();
+    // The JWT-authenticated client is used for authorization above. The
+    // server client owns the write so the invitation cannot disappear from a
+    // PostgREST response because of a client-side RLS/select mismatch.
+    const { data, error } = await admin.from('household_invitations').insert({ household_id: membership.household_id, email, role: body.role, invited_by: auth.user.id }).select().single();
     if (error) throw error;
+    if (!data) throw new Error('Undangan tidak berhasil dibuat.');
     const { error: emailError } = await admin.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${appOrigin}/app/pengguna?invitation=${data.id}`,
+      redirectTo: `${redirectOrigin(request)}/app/pengguna?invitation=${data.id}`,
       data: { invitation_id: data.id, household_id: membership.household_id, invited_role: body.role },
     });
     if (emailError) {
-      await admin.from('household_invitations').update({ status: 'revoked' }).eq('id', data.id);
+      const { error: cleanupError } = await admin
+        .from('household_invitations')
+        .update({ status: 'revoked' })
+        .eq('id', data.id)
+        .eq('status', 'pending');
+      if (cleanupError) throw new Error(`Email undangan gagal dikirim dan record pending gagal dibersihkan: ${cleanupError.message}`);
+      if (isAlreadyRegisteredError(emailError)) {
+        return reply(request, { error: 'Akun dengan email ini sudah terdaftar. Undangan yang gagal sudah dibatalkan dan tidak lagi tercatat sebagai pending.' }, 409);
+      }
       throw new Error(`Email undangan gagal dikirim: ${emailError.message}`);
     }
     return reply(request, { ...data, email_sent: true });

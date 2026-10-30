@@ -1,5 +1,20 @@
 import { FormEvent, useState } from 'react';
-import { supabase, supabaseConfigured } from '../../lib/supabase';
+import { supabase, supabaseConfigured, supabaseConfigurationError } from '../../lib/supabase';
+
+function authRedirectUrl() {
+  const invitationId = new URLSearchParams(window.location.search).get('invitation');
+  return `${window.location.origin}/${invitationId ? `?invitation=${encodeURIComponent(invitationId)}` : ''}`;
+}
+
+function friendlyAuthError(mode: 'signin' | 'signup' | 'reset', error: { message: string }) {
+  if (mode === 'signin' && /invalid login credentials/i.test(error.message)) {
+    return 'Email atau password tidak cocok. Gunakan email yang terdaftar di Auth, bukan nama profil. Jika akun dibuat lewat undangan, buka link undangan atau gunakan “Lupa password?” untuk membuat password baru.';
+  }
+  if (mode === 'signin' && /user not found|email.*not found/i.test(error.message)) {
+    return 'Email ini belum terdaftar di Auth. Periksa kembali emailnya atau buat akun baru.';
+  }
+  return error.message;
+}
 
 export function AuthPage() {
   const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin');
@@ -8,7 +23,10 @@ export function AuthPage() {
   const [fullName, setFullName] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [confirmationEmail, setConfirmationEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [sendingMagicLink, setSendingMagicLink] = useState(false);
+  const [resending, setResending] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -16,27 +34,73 @@ export function AuthPage() {
     setSubmitting(true);
     setError('');
     setMessage('');
+    setConfirmationEmail('');
     let requestError: { message: string } | null = null;
     let signedUpWithoutSession = false;
+    const normalizedEmail = email.trim().toLowerCase();
     if (mode === 'signin') {
-      const result = await supabase.auth.signInWithPassword({ email, password });
+      const result = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
       requestError = result.error;
     } else if (mode === 'reset') {
-      const result = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/` });
+      const result = await supabase.auth.resetPasswordForEmail(normalizedEmail, { redirectTo: authRedirectUrl() });
       requestError = result.error;
     } else {
-      const result = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName.trim() } } });
+      const result = await supabase.auth.signUp({ email: normalizedEmail, password, options: { data: { full_name: fullName.trim() }, emailRedirectTo: authRedirectUrl() } });
       requestError = result.error;
       signedUpWithoutSession = !result.data.session;
+      if (!requestError && signedUpWithoutSession) {
+        setConfirmationEmail(normalizedEmail);
+        setMessage('Akun berhasil dibuat. Periksa email untuk mengonfirmasi akunmu sebelum masuk.');
+      }
     }
     setSubmitting(false);
-    if (requestError) setError(requestError.message);
-    else if (mode === 'signup' && signedUpWithoutSession) setMessage('Periksa email untuk mengonfirmasi akunmu.');
+    if (requestError) {
+      if (mode === 'signin' && /email\s+not\s+confirmed|email belum dikonfirmasi|not confirmed/i.test(requestError.message)) {
+        setConfirmationEmail(normalizedEmail);
+        setError('Email kamu belum dikonfirmasi. Kirim ulang email konfirmasi lalu buka tautannya.');
+      } else {
+        setError(friendlyAuthError(mode, requestError));
+      }
+    } else if (mode === 'signup' && !signedUpWithoutSession) setMessage('Akun berhasil dibuat dan kamu sudah masuk.');
     else if (mode === 'reset') setMessage('Kalau email terdaftar, tautan reset password sudah dikirim.');
   }
 
+  async function resendConfirmation() {
+    if (!supabase || !confirmationEmail) return;
+    setResending(true);
+    setError('');
+    setMessage('');
+    const { error: resendError } = await supabase.auth.resend({ type: 'signup', email: confirmationEmail, options: { emailRedirectTo: authRedirectUrl() } });
+    setResending(false);
+    if (resendError) setError(resendError.message);
+    else setMessage('Email konfirmasi dikirim ulang. Cek inbox dan folder spam.');
+  }
+
+  async function sendMagicLink() {
+    if (!supabase) return;
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
+      setError('Masukkan email yang valid dulu.');
+      setMessage('');
+      return;
+    }
+    setSendingMagicLink(true);
+    setError('');
+    setMessage('');
+    const { error: magicLinkError } = await supabase.auth.signInWithOtp({
+      email: normalizedEmail,
+      options: {
+        emailRedirectTo: authRedirectUrl(),
+        shouldCreateUser: false,
+      },
+    });
+    setSendingMagicLink(false);
+    if (magicLinkError) setError(magicLinkError.message);
+    else setMessage('Kalau email terdaftar, link masuk sudah dikirim. Cek inbox dan folder spam.');
+  }
+
   if (!supabaseConfigured) {
-    return <main className="setup-required"><img src="/UI/Meowku_Logo_Kucing_Jam_Transparent.webp" alt="Logo Meowku" /><h1>Supabase belum dikonfigurasi</h1><p>Isi variabel Supabase di <code>.env.local</code>.</p></main>;
+    return <main className="setup-required"><img src="/UI/Meowku_Logo_Kucing_Jam_Transparent.webp" alt="Logo Meowku" /><h1>{supabaseConfigurationError ? 'Konfigurasi production belum benar' : 'Supabase belum dikonfigurasi'}</h1><p>{supabaseConfigurationError ?? 'Isi variabel Supabase di .env.local.'}</p></main>;
   }
 
   return <main className="auth-page"><div className="auth-shell">
@@ -57,9 +121,11 @@ export function AuthPage() {
       </div>
       {error && <div className="auth-error" role="alert">{error}</div>}
       {message && <div className="auth-message" role="status">{message}</div>}
+      {confirmationEmail && <button type="button" className="auth-switch" disabled={resending} onClick={() => void resendConfirmation()}>{resending ? 'Mengirim ulang...' : 'Kirim ulang email konfirmasi'}</button>}
       <button type="submit" className="primary auth-submit" disabled={submitting}>{submitting ? 'Memproses...' : mode === 'signin' ? 'Masuk ke akun' : mode === 'reset' ? 'Kirim tautan reset' : 'Buat akun'}</button>
-      {mode === 'signin' && <button type="button" className="auth-switch" onClick={() => { setMode('reset'); setError(''); setMessage(''); }}>Lupa password?</button>}
-      <button type="button" className="auth-switch" onClick={() => { setMode(mode === 'signin' || mode === 'reset' ? 'signup' : 'signin'); setError(''); setMessage(''); }}>{mode === 'signup' ? 'Sudah punya akun? Masuk di sini' : 'Belum punya akun? Daftar sekarang'}</button>
+      {mode === 'signin' && <button type="button" className="auth-switch" disabled={sendingMagicLink} onClick={() => void sendMagicLink()}>{sendingMagicLink ? 'Mengirim link masuk...' : 'Masuk dengan link email'}</button>}
+      {mode === 'signin' && <button type="button" className="auth-switch" onClick={() => { setMode('reset'); setError(''); setMessage(''); setConfirmationEmail(''); }}>Lupa password?</button>}
+      <button type="button" className="auth-switch" onClick={() => { setMode(mode === 'signin' || mode === 'reset' ? 'signup' : 'signin'); setError(''); setMessage(''); setConfirmationEmail(''); }}>{mode === 'signup' ? 'Sudah punya akun? Masuk di sini' : 'Belum punya akun? Daftar sekarang'}</button>
     </form>
   </div></main>;
 }
