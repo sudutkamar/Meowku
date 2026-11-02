@@ -273,7 +273,7 @@ export function useCompleteOccurrence(householdId?: string) {
     });
     if (error) throw error;
     return data;
-  }, onSuccess: () => { invalidateScheduleQueries(client, householdId); void client.invalidateQueries({ queryKey: ['history', householdId] }); void client.invalidateQueries({ queryKey: ['report', householdId] }); } });
+  }, onSuccess: () => { invalidateScheduleQueries(client, householdId); void client.invalidateQueries({ queryKey: ['history', householdId] }); void client.invalidateQueries({ queryKey: ['report', householdId] }); void client.invalidateQueries({ queryKey: ['task-performance', householdId] }); } });
 }
 
 export function useArchiveOccurrence(householdId?: string) {
@@ -283,5 +283,5 @@ export function useArchiveOccurrence(householdId?: string) {
     const { data, error } = await supabase.rpc('archive_occurrence', { occurrence_id_value: occurrenceId });
     if (error) throw error;
     return data;
-  }, onSuccess: () => { invalidateScheduleQueries(client, householdId); void client.invalidateQueries({ queryKey: ['history', householdId] }); } });
+  }, onSuccess: () => { invalidateScheduleQueries(client, householdId); void client.invalidateQueries({ queryKey: ['history', householdId] }); void client.invalidateQueries({ queryKey: ['task-performance', householdId] }); } });
 }
