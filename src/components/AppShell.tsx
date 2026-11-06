@@ -122,7 +122,7 @@ function ShellContent({
   });
   const isEnglish = language === "en";
   const canAccessAdmin = householdAccess.data?.role === 'owner' || householdAccess.data?.role === 'admin';
-  const adminNavigation = new Set(['Laporan', 'Pengaturan Jadwal', 'Pengguna', 'Database', 'Pengaturan']);
+  const adminNavigation = new Set(['Histori', 'Laporan', 'Pengaturan Jadwal', 'Pengguna', 'Database']);
   const isScheduleRoute = activePage === "Jadwal" || activePage === "Riwayat Jadwal";
   useEffect(() => {
     if (isScheduleRoute) setScheduleOpen(true);
@@ -294,6 +294,7 @@ function ShellContent({
             {households.length > 1 && <label className="household-switcher"><span className="sr-only">Rumah aktif</span><select aria-label="Pilih rumah aktif" value={householdId} onChange={(event) => onHouseholdChange?.(event.target.value)}>{households.map((item) => <option key={item.id} value={item.id}>{item.name ?? 'Rumah'}</option>)}</select></label>}
             <NotificationBell
               householdId={householdId}
+              timezone={households.find((item) => item.id === householdId)?.timezone ?? 'Asia/Jakarta'}
               onNavigate={navigate}
             />
             <button

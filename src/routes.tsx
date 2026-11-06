@@ -102,12 +102,12 @@ const catalogRoute = createRoute({ getParentRoute: () => appRoute, path: '/katal
 const catsRoute = createRoute({ getParentRoute: () => appRoute, path: '/kucing', component: () => <LazyPage><CatsPage household={useHouseholdContext().household} /></LazyPage> });
 const catDetailRoute = createRoute({ getParentRoute: () => appRoute, path: '/kucing/$catId', component: () => <LazyPage><CatsPage household={useHouseholdContext().household} /></LazyPage> });
 const litterRoute = createRoute({ getParentRoute: () => appRoute, path: '/litter-box', component: () => <LazyPage><LitterBoxesPage household={useHouseholdContext().household} /></LazyPage> });
-const historyRoute = createRoute({ getParentRoute: () => appRoute, path: '/histori', component: () => <LazyPage><HistoryPage household={useHouseholdContext().household} /></LazyPage> });
+const historyRoute = createRoute({ getParentRoute: () => appRoute, path: '/histori', component: () => <AdminOnlyRoute><LazyPage><HistoryPage household={useHouseholdContext().household} /></LazyPage></AdminOnlyRoute> });
 const reportsRoute = createRoute({ getParentRoute: () => appRoute, path: '/laporan', component: () => <AdminOnlyRoute><LazyPage><ReportsPage household={useHouseholdContext().household} /></LazyPage></AdminOnlyRoute> });
 const scheduleSettingsRoute = createRoute({ getParentRoute: () => appRoute, path: '/pengaturan-jadwal', component: () => <AdminOnlyRoute><LazyPage><ScheduleSettingsPage household={useHouseholdContext().household} /></LazyPage></AdminOnlyRoute> });
 const membersRoute = createRoute({ getParentRoute: () => appRoute, path: '/pengguna', component: () => <AdminOnlyRoute><MembersRoute /></AdminOnlyRoute> });
 const adminUsersRoute = createRoute({ getParentRoute: () => appRoute, path: '/database-pengguna', component: () => <AdminOnlyRoute><AdminUsersRoute /></AdminOnlyRoute> });
-const settingsRoute = createRoute({ getParentRoute: () => appRoute, path: '/pengaturan', component: () => <AdminOnlyRoute><LazyPage><SettingsPage household={useHouseholdContext().household} /></LazyPage></AdminOnlyRoute> });
+const settingsRoute = createRoute({ getParentRoute: () => appRoute, path: '/pengaturan', component: () => <LazyPage><SettingsPage household={useHouseholdContext().household} /></LazyPage> });
 
 const routeTree = rootRoute.addChildren([
   rootLandingRoute,

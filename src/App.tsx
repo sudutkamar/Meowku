@@ -22,7 +22,7 @@ function AuthenticatedApp({ email, household, households, displayName }: { email
   const [activeId, setActiveId] = useState(household.id);
   useEffect(() => { if (!households.some((item) => item.id === activeId)) setActiveId(household.id); }, [activeId, household.id, households]);
   const activeHousehold = households.find((item) => item.id === activeId) ?? household;
-  return <HouseholdProvider value={{ email, household: activeHousehold, households, displayName, setActiveHousehold: setActiveId }}><AppShell email={email} householdId={activeHousehold.id} households={households} onHouseholdChange={setActiveId} onSignOut={() => void supabase?.auth.signOut()}><Suspense fallback={<PageSkeleton />}><Outlet /></Suspense></AppShell></HouseholdProvider>;
+  return <HouseholdProvider value={{ email, household: activeHousehold, households, displayName, setActiveHousehold: setActiveId }}><AppShell key={activeHousehold.id} email={email} householdId={activeHousehold.id} households={households} onHouseholdChange={setActiveId} onSignOut={() => void supabase?.auth.signOut()}><Suspense fallback={<PageSkeleton />}><Outlet /></Suspense></AppShell></HouseholdProvider>;
 }
 
 export function App() {

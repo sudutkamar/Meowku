@@ -22,7 +22,7 @@ test('browser and PWA branding use transparent PNG assets', () => {
   assert.match(index, /favicon-16\.png/);
   assert.match(index, /favicon-32\.png/);
   assert.match(index, /<title>Meowku — Perawatan Kucing<\/title>/);
-  assert.match(serviceWorker, /meowku-shell-v3/);
+  assert.match(serviceWorker, /meowku-shell-v4/);
   assert.match(serviceWorker, /favicon-16\.png/);
   assert.match(serviceWorker, /favicon-32\.png/);
 });

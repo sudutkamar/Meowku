@@ -6,7 +6,7 @@ import { ConfirmActionButton } from '../../components/ConfirmActionButton';
 import { PageSkeleton } from '../../components/Skeleton';
 import { useArchiveCatalogItem, useCatalog, useCreateCatalogItem, useRecordCatalogStockMovement, useUpdateCatalogItem, type CatalogInput, type StockMovementInput } from './useCatalog';
 
-const empty: CatalogInput = { name: '', category: 'other', notes: '', stock_unit: 'unit' };
+const empty: CatalogInput = { name: '', category: 'other', notes: '', stock_unit: 'unit', minimum_stock: 0 };
 
 export function CatalogPage({ household }: { household: Household }) {
   const items = useCatalog(household.id);
@@ -37,14 +37,14 @@ export function CatalogPage({ household }: { household: Household }) {
   }
 
   if (items.isLoading) return <PageSkeleton />;
-  if (items.error) return <section className="panel entity-page"><p role="alert">{items.error.message}</p></section>;
+  if (items.error) return <section className="panel entity-page"><p role="alert">{items.error.message}</p><button className="secondary" type="button" onClick={() => void items.refetch()}>Coba lagi</button></section>;
 
   return <section className="entity-page">
     <div className="page-heading"><div><p className="eyebrow">MEOWKU / KATALOG</p><h1>Katalog</h1><p>Kelola kebutuhan perawatan dan persediaan household.</p></div></div>
     <div className="entity-layout">
       <div className="panel entity-form-card">
         <h2>{editing ? 'Edit item' : 'Tambah item'}</h2>
-        <EntityForm fields={[{ name: 'name', label: 'Nama item' }, { name: 'category', label: 'Kategori' }, { name: 'stock_unit', label: 'Satuan stok', placeholder: 'contoh: kg, pcs, kaleng' }, { name: 'notes', label: 'Catatan', placeholder: 'Opsional' }]} values={{ name: form.name, category: form.category ?? '', stock_unit: form.stock_unit ?? 'unit', notes: form.notes ?? '' }} submitLabel={editing ? 'Simpan perubahan' : 'Tambah item'} pending={mutation.isPending} error={mutation.error} success={mutation.isSuccess} onRetry={() => { if (editing) update.mutate({ id: editing, input: form }); else create.mutate(form); }} onChange={(name, value) => setForm((current) => ({ ...current, [name]: value }))} onSubmit={submit} onCancel={editing ? cancel : undefined} />
+        <EntityForm fields={[{ name: 'name', label: 'Nama item' }, { name: 'category', label: 'Kategori' }, { name: 'stock_unit', label: 'Satuan stok', placeholder: 'contoh: kg, pcs, kaleng' }, { name: 'minimum_stock', label: 'Batas stok minimum', type: 'number', placeholder: '0 = tidak ada batas' }, { name: 'notes', label: 'Catatan', placeholder: 'Opsional' }]} values={{ name: form.name, category: form.category ?? '', stock_unit: form.stock_unit ?? 'unit', minimum_stock: String(form.minimum_stock ?? 0), notes: form.notes ?? '' }} submitLabel={editing ? 'Simpan perubahan' : 'Tambah item'} pending={mutation.isPending} error={mutation.error} success={mutation.isSuccess} onRetry={() => { if (editing) update.mutate({ id: editing, input: form }); else create.mutate(form); }} onChange={(name, value) => setForm((current) => ({ ...current, [name]: name === 'minimum_stock' ? Number(value) : value }))} onSubmit={submit} onCancel={editing ? cancel : undefined} />
       </div>
       <div>
         {stockItem && <form className="panel stock-movement-form" onSubmit={recordStock}>
@@ -57,9 +57,9 @@ export function CatalogPage({ household }: { household: Household }) {
         </form>}
         {items.data?.length ? <div className="data-list">{items.data.map((item) => <div className="data-row" key={item.id}>
           <div className="row-icon"><ShoppingBag size={21} aria-hidden="true" /></div>
-          <div><b>{item.name}</b><small>{item.category || 'Kategori lain'} · Stok: {Number(item.stock_quantity ?? 0).toLocaleString('id-ID')} {item.stock_unit || 'unit'}{item.notes ? ` · ${item.notes}` : ''}</small></div>
+          <div><b>{item.name}</b><small>{item.category || 'Kategori lain'} · Stok: {Number(item.stock_quantity ?? 0).toLocaleString('id-ID')} {item.stock_unit || 'unit'}{Number(item.minimum_stock ?? 0) > 0 ? ` · Minimum ${Number(item.minimum_stock).toLocaleString('id-ID')} ${item.stock_unit || 'unit'}` : ''}{Number(item.minimum_stock ?? 0) > 0 && Number(item.stock_quantity ?? 0) <= Number(item.minimum_stock) ? ' · Stok rendah' : ''}{item.notes ? ` · ${item.notes}` : ''}</small></div>
           <button type="button" className="secondary" onClick={() => openStock(item)}><SlidersHorizontal size={15} /> Stok</button>
-          <button type="button" className="secondary" onClick={() => { setEditing(item.id); setForm({ name: item.name, category: item.category, notes: item.notes, stock_unit: item.stock_unit }); }}>Edit</button>
+          <button type="button" className="secondary" onClick={() => { setEditing(item.id); setForm({ name: item.name, category: item.category, notes: item.notes, stock_unit: item.stock_unit, minimum_stock: Number(item.minimum_stock ?? 0) }); }}>Edit</button>
           <ConfirmActionButton className="row-action" label="Arsipkan" title="Arsipkan item katalog?" description={`Item “${item.name}” akan disembunyikan dari daftar aktif. Data histori tetap aman.`} confirmLabel="Arsipkan item" pending={archive.isPending} onConfirm={() => archive.mutate(item.id)} />
         </div>)}</div> : <div className="empty"><span><Archive size={34} aria-hidden="true" /></span><h2>Belum ada item katalog</h2><p>Tambahkan kebutuhan pertama household ini.</p></div>}
         <p className="field-hint"><Plus size={14} /> Stok masuk dan <Minus size={14} /> stok terpakai tercatat sebagai transaksi dan tidak boleh menghasilkan saldo negatif.</p>

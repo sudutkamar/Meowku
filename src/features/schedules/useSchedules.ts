@@ -160,16 +160,17 @@ export function useScheduleOccurrences(householdId: string | undefined, timezone
         range_end: range.to,
       });
       if (generationError) throw generationError;
-      const [occurrences, assignees] = await Promise.all([
-        supabase.from('schedule_occurrences').select('*, schedules!inner(title, category, custom_category, status, is_active, start_date, end_date, repeat_interval, repeat_unit), schedule_slots(label, local_time)').eq('household_id', householdId).eq('schedules.is_active', true).eq('schedules.status', 'active').is('archived_at', null).gte('local_date', range.from).lte('local_date', range.to).order('local_date').order('scheduled_at'),
-        supabase.from('household_assignees').select('id, display_name').eq('household_id', householdId).eq('is_active', true),
-      ]);
-      // Next Up tetap dapat dirender dari definisi jadwal aktif bila occurrence
-      // atau daftar assignee belum tersedia karena backfill/schema lama.
-      if (occurrences.error) throw occurrences.error;
-      if (assignees.error) throw assignees.error;
-      const names = new Map((assignees.data ?? []).map((assignee) => [assignee.id, { display_name: assignee.display_name }]));
-      return (occurrences.data ?? []).map((occurrence) => ({ ...occurrence, household_assignees: occurrence.assignee_id ? names.get(occurrence.assignee_id) ?? null : null })) as unknown as ScheduleOccurrence[];
+      // Sumber kebenaran tunggal: occurrence yg sudah disimpan di database.
+      // Assignee dinamis dihitung di SQL; jangan fallback ke query client atau
+      // preview sintetis karena akan menyimpang dari histori/RLS.
+      const { data: dynamic, error: dynamicError } = await (supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>)('household_schedule_occurrences', {
+        requested_household_id: householdId,
+        from_date: range.from,
+        to_date: range.to,
+      });
+      if (dynamicError) throw dynamicError;
+      if (!Array.isArray(dynamic)) throw new Error('Respons jadwal tidak valid.');
+      return dynamic as unknown as ScheduleOccurrence[];
     },
   });
 }
@@ -284,4 +285,34 @@ export function useArchiveOccurrence(householdId?: string) {
     if (error) throw error;
     return data;
   }, onSuccess: () => { invalidateScheduleQueries(client, householdId); void client.invalidateQueries({ queryKey: ['history', householdId] }); void client.invalidateQueries({ queryKey: ['task-performance', householdId] }); } });
+}
+
+export function useRepairOccurrenceAssignments(householdId?: string) {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: async () => {
+    if (!supabase || !householdId) throw new Error('Household belum tersedia.');
+    const { data, error } = await supabase.rpc('repair_future_occurrence_assignments', { requested_household_id: householdId });
+    if (error) throw error;
+    return data;
+  }, onSuccess: () => invalidateScheduleQueries(client, householdId) });
+}
+
+export function useReassignOccurrence(householdId?: string) {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: async ({ occurrenceId, assigneeId }: { occurrenceId: string; assigneeId?: string }) => {
+    if (!supabase || !householdId) throw new Error('Household belum tersedia.');
+    const { data, error } = await supabase.rpc('reassign_occurrence', { occurrence_id: occurrenceId, assignee_id_value: assigneeId ?? null });
+    if (error) throw error;
+    return data;
+  }, onSuccess: () => invalidateScheduleQueries(client, householdId) });
+}
+
+export function useUncompleteOccurrence(householdId?: string) {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: async (occurrenceId: string) => {
+    if (!supabase || !householdId) throw new Error('Household belum tersedia.');
+    const { data, error } = await supabase.rpc('uncomplete_occurrence', { occurrence_id: occurrenceId });
+    if (error) throw error;
+    return data;
+  }, onSuccess: () => { invalidateScheduleQueries(client, householdId); void client.invalidateQueries({ queryKey: ['history', householdId] }); void client.invalidateQueries({ queryKey: ['report', householdId] }); void client.invalidateQueries({ queryKey: ['task-performance', householdId] }); } });
 }

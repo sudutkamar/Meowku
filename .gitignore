@@ -10,6 +10,8 @@ supabase/.branches/
 *.md
 !README.md
 docs/
+!docs/
+!docs/*.md
 UI/
 Todo.txt
 

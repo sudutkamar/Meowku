@@ -33,7 +33,7 @@ test('member invite does not report success without an email delivery result', (
   assert.match(page, /email_sent !== true/);
   assert.match(page, /Periksa konfigurasi SMTP Supabase/);
   assert.match(fn, /Access-Control-Allow-Origin/);
-  assert.match(fn, /meowku\.panda-12b\.workers\.dev/);
+  assert.match(fn, /http:\/\/localhost:5173/);
   assert.match(fn, /Vary: 'Origin'/);
   assert.doesNotMatch(page, /service_role/i);
 });

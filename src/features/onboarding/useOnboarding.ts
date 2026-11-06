@@ -35,12 +35,9 @@ export function useOnboarding() {
       if (!supabase) throw new Error('Supabase belum dikonfigurasi.');
       const name = householdName.trim();
       if (!name) throw new Error('Nama household wajib diisi.');
-      const { data, error } = await supabase.rpc('create_household', { household_name: name }).single();
+      const { data, error } = await supabase.rpc('create_household', { household_name: name, timezone_value: timezone });
       if (error) throw error;
-      const household = data as { id: string };
-      const { data: updated, error: updateError } = await supabase.from('households').update({ timezone }).eq('id', household.id).select().single();
-      if (updateError) throw updateError;
-      return updated;
+      return data;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['current-households'] });

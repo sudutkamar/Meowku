@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
+import { toDatabaseError } from '../../lib/database-errors';
 
 export type NotificationRecord = {
   id: string;
@@ -22,11 +23,26 @@ export function useNotifications(householdId?: string) {
   return useQuery({
     queryKey: key(householdId),
     enabled: Boolean(supabase && householdId),
+    refetchInterval: 30_000,
     queryFn: async (): Promise<NotificationRecord[]> => {
       if (!supabase || !householdId) throw new Error('Household belum tersedia.');
       const { data, error } = await supabase.from('notifications').select('*').eq('household_id', householdId).is('hidden_at', null).order('created_at', { ascending: false }).limit(30);
-      if (error) throw error;
+      if (error) throw toDatabaseError(error);
       return (data ?? []) as NotificationRecord[];
+    },
+  });
+}
+
+export function useNotificationUnreadCount(householdId?: string) {
+  return useQuery({
+    queryKey: ['notification-unread-count', householdId],
+    enabled: Boolean(supabase && householdId),
+    refetchInterval: 30_000,
+    queryFn: async (): Promise<number> => {
+      if (!supabase || !householdId) throw new Error('Household belum tersedia.');
+      const { count, error } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('household_id', householdId).is('read_at', null).is('hidden_at', null);
+      if (error) throw toDatabaseError(error);
+      return count ?? 0;
     },
   });
 }
@@ -38,7 +54,7 @@ export function useMarkNotificationRead(householdId?: string) {
     const { data, error } = await supabase.rpc('mark_notification_read', { notification_id_value: id });
     if (error) throw error;
     return data;
-  }, onSuccess: () => client.invalidateQueries({ queryKey: key(householdId) }) });
+  }, onSuccess: () => { void client.invalidateQueries({ queryKey: key(householdId) }); void client.invalidateQueries({ queryKey: ['notification-unread-count', householdId] }); } });
 }
 
 export function useHideNotifications(householdId?: string) {
@@ -48,7 +64,7 @@ export function useHideNotifications(householdId?: string) {
     const { data, error } = await supabase.rpc('hide_notifications');
     if (error) throw error;
     return data;
-  }, onSuccess: () => client.invalidateQueries({ queryKey: key(householdId) }) });
+  }, onSuccess: () => { void client.invalidateQueries({ queryKey: key(householdId) }); void client.invalidateQueries({ queryKey: ['notification-unread-count', householdId] }); } });
 }
 
 export function useNotificationPreferences(householdId?: string) {

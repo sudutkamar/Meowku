@@ -5,11 +5,11 @@ export default defineConfig({
   root: '.',
   plugins: [react()],
   server: {
-    host: true,
+    host: '127.0.0.1',
     port: 5173,
   },
   preview: {
-    host: true,
+    host: '127.0.0.1',
     port: 4173,
   },
   build: {

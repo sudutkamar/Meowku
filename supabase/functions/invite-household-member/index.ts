@@ -98,3 +98,4 @@ Deno.serve(async (request) => {
     return reply(request, { ...data, email_sent: true });
   } catch (error) { return reply(request, { error: error instanceof Error ? error.message : 'Undangan gagal dibuat.' }, 400); }
 });
+

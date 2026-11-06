@@ -11,7 +11,14 @@ export function toDatabaseError(cause: unknown): Error {
     PGRST202: 'Fitur ini belum siap. Coba lagi setelah database diperbarui.',
     PGRST204: 'Perubahan belum bisa disimpan.',
     PGRST205: 'Database belum siap. Coba lagi setelah diperbarui.',
+    invalid_timezone: 'Zona waktu tidak valid.',
+    schedule_has_history_archive_instead: 'Jadwal ini sudah memiliki histori. Arsipkan jadwal agar histori tetap aman.',
+    household_admin_required: 'Hanya owner atau admin yang dapat melakukan perubahan ini.',
+    household_owner_required: 'Hanya owner rumah yang dapat memindahkan kepemilikan.',
+    ownership_target_not_member: 'Pemilik baru harus menjadi anggota aktif household.',
+    ownership_target_must_differ: 'Pilih anggota lain sebagai pemilik baru.',
   };
   const message = error?.code ? messages[error.code] : undefined;
-  return new Error(message ?? error?.message ?? 'Ada masalah. Coba lagi.');
+  const detailMessage = error?.message ? Object.entries(messages).find(([key]) => error.message?.includes(key))?.[1] : undefined;
+  return new Error(message ?? detailMessage ?? error?.message ?? 'Ada masalah. Coba lagi.');
 }

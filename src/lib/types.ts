@@ -39,5 +39,6 @@ export type CatalogItem = {
   notes: string;
   stock_quantity: number;
   stock_unit: string;
+  minimum_stock: number;
   is_active: boolean;
 };

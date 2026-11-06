@@ -23,10 +23,11 @@ test('schedule history exposes today, tomorrow, week, month filters and assignme
   assert.match(hook, /completed_by/);
 });
 
-test('schedule history does not require a PostgREST embedded assignee relationship', () => {
+test('schedule history relies on the dynamic occurrence RPC instead of client fallbacks', () => {
   const hook = read('src/features/schedules/useSchedules.ts');
   assert.doesNotMatch(hook, /household_assignees\(display_name\)/);
-  assert.match(hook, /from\('household_assignees'\)/);
+  assert.match(hook, /household_schedule_occurrences/);
+  assert.doesNotMatch(hook, /from\('schedule_occurrences'\)\.select/);
 });
 
 test('schedule history exposes a timezone-aware next-day preview', () => {
@@ -45,7 +46,7 @@ test('schedule history exposes a timezone-aware next-day preview', () => {
   assert.match(page, /tomorrow-schedule-toggle/);
   assert.match(page, /aria-expanded=\{tomorrowOpen\}/);
   assert.match(page, /hasTomorrowTasks/);
-  assert.match(page, /scheduleIsDueOn\(schedule, date\)/);
+  assert.match(page, /tomorrowRows = tomorrowOccurrences\.data \?\? \[\];/);
   assert.match(page, /tomorrowCategoryOptions\.some/);
   assert.match(styles, /\.tomorrow-schedule-item/);
   assert.match(styles, /\.tomorrow-tone-feeding/);
@@ -67,25 +68,15 @@ test('schedule occurrence reads repair missing future rows idempotently', () => 
   assert.match(migration, /on conflict|idempotent/i);
 });
 
-test('tomorrow preview derives missing rows from active Supabase schedule definitions', () => {
-  const page = read('src/features/schedule-history/ScheduleHistoryPage.tsx');
-  assert.match(page, /useSchedules\(household\.id\)/);
-  assert.match(page, /scheduleIsDueOn/);
-  assert.match(page, /fallbackTomorrowOccurrences/);
-  assert.match(page, /mergeTomorrowOccurrences/);
-  assert.match(page, /schedules\.isLoading/);
-});
-
-test('tomorrow preview keeps database occurrences and does not depend on client recurrence filtering', () => {
+test('tomorrow preview uses persisted Supabase occurrences as its only source', () => {
   const page = read('src/features/schedule-history/ScheduleHistoryPage.tsx');
   const hook = read('src/features/schedules/useSchedules.ts');
-  assert.match(page, /const actual = tomorrowOccurrences\.data \?\? \[\];/);
-  assert.doesNotMatch(page, /tomorrowOccurrences\.data \?\? \[\]\)\.filter/);
+  assert.match(page, /const tomorrowRows = tomorrowOccurrences\.data \?\? \[\];/);
+  assert.doesNotMatch(page, /fallbackTomorrowOccurrences/);
+  assert.doesNotMatch(page, /mergeTomorrowOccurrences/);
+  assert.doesNotMatch(page, /scheduleIsDueOn\(/);
+  assert.match(page, /tomorrowOccurrences\.isLoading/);
   assert.match(hook, /generate_schedule_occurrences/);
-  assert.match(hook, /if \(generationError\) throw generationError/);
-  assert.match(hook, /eq\('schedules\.status', 'active'\)/);
-  assert.match(hook, /if \(occurrences\.error\) throw occurrences\.error/);
-  assert.match(hook, /if \(assignees\.error\) throw assignees\.error/);
 });
 
 test('future occurrence repair updates only incomplete future rows and preserves history', () => {

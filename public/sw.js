@@ -1,4 +1,4 @@
-const CACHE_NAME = 'meowku-shell-v3';
+const CACHE_NAME = 'meowku-shell-v4';
 const DEFAULT_ACTION_URL = '/app/riwayat-jadwal';
 
 function normalizeActionUrl(actionUrl) {
@@ -15,6 +15,18 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) return;
+
+  // Jangan cache API/response dinamis; data domain harus selalu dari Supabase.
+  const pathname = new URL(event.request.url).pathname;
+  const isStaticAsset = /\.(?:js|css|html|webp|png|jpg|jpeg|svg|ico|woff2?|webmanifest)$/i.test(pathname)
+    || pathname === '/'
+    || pathname === '/icons/'
+    || pathname.startsWith('/icons/')
+    || pathname.startsWith('/assets/')
+    || pathname.startsWith('/UI/');
+
+  if (!isStaticAsset) return;
+
   event.respondWith(fetch(event.request).then((response) => {
     const copy = response.clone();
     void caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));

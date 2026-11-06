@@ -38,7 +38,7 @@ export function CatsPage({ household }: { household: Household }) {
   function deleteCat(id: string) { remove.mutate(id); }
 
   if (cats.isLoading) return <PageSkeleton />;
-  if (cats.error) return <section className="panel entity-page"><p role="alert">{cats.error.message}</p></section>;
+  if (cats.error) return <section className="panel entity-page"><p role="alert">{cats.error.message}</p><button className="secondary" type="button" onClick={() => void cats.refetch()}>Coba lagi</button></section>;
   const careCat = cats.data?.find((cat) => cat.id === careCatId);
   if (careCat) return <section className="entity-page cat-detail-page">
     <div className="cat-detail-hero">

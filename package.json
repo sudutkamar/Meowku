@@ -11,8 +11,9 @@
     "typecheck": "tsc -b",
     "lint": "node scripts/lint.mjs",
     "test": "node --test tests/**/*.test.mjs",
+    "test:local": "node scripts/local-integration.mjs",
     "preview": "npm run build && wrangler dev",
-    "deploy": "npm run build && wrangler deploy"
+    "notifications:dispatch": "node scripts/dispatch-notifications-local.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.10",
