@@ -33,11 +33,15 @@ async function fetchReportSummary(householdId: string, fromDate: string, toDate:
 
 export async function fetchHouseholdReport(householdId: string, { fromDate, toDate, catId }: ReportRange, timezone = 'Asia/Jakarta'): Promise<HouseholdReport> {
   if (!supabase) throw new Error('Supabase belum dikonfigurasi.');
+  // `catId` can arrive as an empty string (e.g. the "Semua kucing" option).
+  // Only apply a cat filter when a real id is present; never forward "" to a
+  // uuid column, which Postgres rejects with `invalid input syntax for uuid`.
+  const selectedCatId = catId?.trim() ? catId : null;
   const [summary, expenses, weights, vaccines] = await Promise.all([
     fetchReportSummary(householdId, fromDate, toDate, timezone),
-    supabase.from('cat_expenses').select('category, amount, spent_at').eq('household_id', householdId).gte('spent_at', fromDate).lte('spent_at', toDate).eq(catId ? 'cat_id' : 'household_id', catId ?? householdId),
-    supabase.from('cat_health_records').select('cat_id, recorded_at, weight_kg').eq('household_id', householdId).eq('record_type', 'weight').gte('recorded_at', `${fromDate}T00:00:00`).lte('recorded_at', `${toDate}T23:59:59`).not('weight_kg', 'is', null).eq(catId ? 'cat_id' : 'household_id', catId ?? householdId).order('recorded_at'),
-    supabase.from('cat_vaccinations').select('next_due_at').eq('household_id', householdId).not('next_due_at', 'is', null).gte('next_due_at', fromDate).lte('next_due_at', toDate).eq(catId ? 'cat_id' : 'household_id', catId ?? householdId),
+    (() => { const query = supabase.from('cat_expenses').select('category, amount, spent_at').eq('household_id', householdId).gte('spent_at', fromDate).lte('spent_at', toDate); return selectedCatId ? query.eq('cat_id', selectedCatId) : query; })(),
+    (() => { const query = supabase.from('cat_health_records').select('cat_id, recorded_at, weight_kg').eq('household_id', householdId).eq('record_type', 'weight').gte('recorded_at', `${fromDate}T00:00:00`).lte('recorded_at', `${toDate}T23:59:59`).not('weight_kg', 'is', null); return selectedCatId ? query.eq('cat_id', selectedCatId) : query; })(),
+    (() => { const query = supabase.from('cat_vaccinations').select('next_due_at').eq('household_id', householdId).not('next_due_at', 'is', null).gte('next_due_at', fromDate).lte('next_due_at', toDate); return selectedCatId ? query.eq('cat_id', selectedCatId) : query; })(),
   ]);
   const { data, error } = summary;
   if (error) throw error;
