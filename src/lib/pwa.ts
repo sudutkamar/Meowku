@@ -16,10 +16,30 @@ export function getPushSupportMessage() {
   return null;
 }
 
+export function useOnlineStatus() {
+  // minimal hook-less helper exported; returns current online state
+  if (typeof navigator === 'undefined') return true;
+  return navigator.onLine;
+}
+
 export async function registerMeowkuServiceWorker() {
   if (!('serviceWorker' in navigator)) return null;
   if (!window.isSecureContext && !isLocalhost(window.location.hostname)) return null;
-  return navigator.serviceWorker.register('/sw.js', { scope: '/' });
+  const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+  registration.addEventListener('updatefound', () => {
+    const worker = registration.installing;
+    if (!worker) return;
+    worker.addEventListener('statechange', () => {
+      if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+        // new version available
+        window.dispatchEvent(new CustomEvent('meowku:new-version'));
+      }
+    });
+  });
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    // allow skipWaiting flow
+  });
+  return registration;
 }
 
 export async function requestPushPermission(): Promise<PushPermission> {

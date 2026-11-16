@@ -221,7 +221,7 @@ export function useCreateSchedule(householdId?: string) {
       day_of_month_value: input.day_of_month ?? null, last_day_value: input.last_day ?? false,
       slots_value: input.slots ?? [{ label: input.title.trim(), local_time: input.time, sort_order: 0, is_active: true }], targets_value: input.targets ?? [],
     });
-    if (error) throw error;
+    if (error) throw toDatabaseError(error);
     if (!data) throw new Error('Jadwal tidak berhasil dibuat.');
     return data;
   }, onSuccess: () => invalidateScheduleQueries(client, householdId) });
@@ -237,7 +237,7 @@ export function useUpdateSchedule(householdId?: string) {
       schedule_id_value: scheduleId,
       definition_value: { ...definition, title: definition.title.trim(), slots: definition.slots ?? [], targets: definition.targets ?? [] },
     });
-    if (error) throw error;
+    if (error) throw toDatabaseError(error);
     return data;
   }, onSuccess: () => invalidateScheduleQueries(client, householdId) });
 }
@@ -247,7 +247,7 @@ function useScheduleLifecycle(householdId: string | undefined, rpc: 'pause_sched
   return useMutation({ mutationFn: async (scheduleId: string) => {
     if (!supabase || !householdId) throw new Error('Household belum tersedia.');
     const { data, error } = await supabase.rpc(rpc, { schedule_id_value: scheduleId });
-    if (error) throw error;
+    if (error) throw toDatabaseError(error);
     return data;
   }, onSuccess: () => invalidateScheduleQueries(client, householdId) });
 }
@@ -263,7 +263,7 @@ export function useGenerateOccurrences(householdId?: string) {
   return useMutation({ mutationFn: async ({ fromDate, toDate }: { fromDate: string; toDate: string }) => {
     if (!supabase || !householdId) throw new Error('Household belum tersedia.');
     const { data, error } = await supabase.rpc('generate_schedule_occurrences', { requested_household_id: householdId, range_start: fromDate, range_end: toDate });
-    if (error) throw error;
+    if (error) throw toDatabaseError(error);
     return data;
   }, onSuccess: () => invalidateScheduleQueries(client, householdId) });
 }
@@ -277,7 +277,7 @@ export function useCompleteOccurrence(householdId?: string) {
       completed_at_value: new Date().toISOString(),
       note_value: note ?? '',
     });
-    if (error) throw error;
+    if (error) throw toDatabaseError(error);
     return data;
   }, onSuccess: () => { invalidateScheduleQueries(client, householdId); void client.invalidateQueries({ queryKey: ['history', householdId] }); void client.invalidateQueries({ queryKey: ['report', householdId] }); void client.invalidateQueries({ queryKey: ['task-performance', householdId] }); } });
 }
@@ -287,7 +287,7 @@ export function useArchiveOccurrence(householdId?: string) {
   return useMutation({ mutationFn: async (occurrenceId: string) => {
     if (!supabase || !householdId) throw new Error('Household belum tersedia.');
     const { data, error } = await supabase.rpc('archive_occurrence', { occurrence_id_value: occurrenceId });
-    if (error) throw error;
+    if (error) throw toDatabaseError(error);
     return data;
   }, onSuccess: () => { invalidateScheduleQueries(client, householdId); void client.invalidateQueries({ queryKey: ['history', householdId] }); void client.invalidateQueries({ queryKey: ['task-performance', householdId] }); } });
 }
@@ -297,7 +297,7 @@ export function useRepairOccurrenceAssignments(householdId?: string) {
   return useMutation({ mutationFn: async () => {
     if (!supabase || !householdId) throw new Error('Household belum tersedia.');
     const { data, error } = await supabase.rpc('repair_future_occurrence_assignments', { requested_household_id: householdId });
-    if (error) throw error;
+    if (error) throw toDatabaseError(error);
     return data;
   }, onSuccess: () => invalidateScheduleQueries(client, householdId) });
 }
@@ -307,7 +307,7 @@ export function useReassignOccurrence(householdId?: string) {
   return useMutation({ mutationFn: async ({ occurrenceId, assigneeId }: { occurrenceId: string; assigneeId?: string }) => {
     if (!supabase || !householdId) throw new Error('Household belum tersedia.');
     const { data, error } = await supabase.rpc('reassign_occurrence', { occurrence_id: occurrenceId, assignee_id_value: assigneeId ?? null });
-    if (error) throw error;
+    if (error) throw toDatabaseError(error);
     return data;
   }, onSuccess: () => invalidateScheduleQueries(client, householdId) });
 }
@@ -317,7 +317,7 @@ export function useUncompleteOccurrence(householdId?: string) {
   return useMutation({ mutationFn: async (occurrenceId: string) => {
     if (!supabase || !householdId) throw new Error('Household belum tersedia.');
     const { data, error } = await supabase.rpc('uncomplete_occurrence', { occurrence_id: occurrenceId });
-    if (error) throw error;
+    if (error) throw toDatabaseError(error);
     return data;
   }, onSuccess: () => { invalidateScheduleQueries(client, householdId); void client.invalidateQueries({ queryKey: ['history', householdId] }); void client.invalidateQueries({ queryKey: ['report', householdId] }); void client.invalidateQueries({ queryKey: ['task-performance', householdId] }); } });
 }
