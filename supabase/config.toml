@@ -288,12 +288,12 @@ max_frequency = "5s"
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
-[auth.sms.twilio]
-enabled = true
-account_sid = ""
-message_service_sid = ""
-# DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+# SMS auth is not used by Meowku (email only); keep disabled to avoid required-field validation errors.
+# [auth.sms.twilio]
+# enabled = false
+# account_sid = ""
+# message_service_sid = ""
+# auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 
 # Multi-factor-authentication is available to Supabase Pro plan.
 [auth.mfa]
@@ -321,20 +321,17 @@ max_frequency = "5s"
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `x`, `slack`, `spotify`, `workos`, `zoom`.
-[auth.external.apple]
-enabled = true
-client_id = ""
-# DO NOT commit your OAuth provider secret to git. Use environment variable substitution instead:
-secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
-# Overrides the default auth callback URL derived from auth.external_url.
-redirect_uri = ""
+# Apple Sign-In is not used by Meowku (email auth only).
+# [auth.external.apple]
+# enabled = false
+# client_id = ""
+# secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+# redirect_uri = ""
 # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
 # or any other third-party OIDC providers.
-url = ""
-# If enabled, the nonce check will be skipped. Required for local sign in with Google auth.
-skip_nonce_check = false
-# If enabled, it will allow the user to successfully authenticate when the provider does not return an email address.
-email_optional = false
+# url = ""
+# skip_nonce_check = false
+# email_optional = false
 
 # Allow Solana wallet holders to sign in to your project via the Sign in with Solana (SIWS, EIP-4361) standard.
 # You can configure "web3" rate limit in the [auth.rate_limit] section and set up [auth.captcha] if self-hosting.
@@ -342,27 +339,26 @@ email_optional = false
 enabled = true
 
 # Use Firebase Auth as a third-party provider alongside Supabase Auth.
-[auth.third_party.firebase]
-enabled = true
-# project_id = "my-firebase-project"
+# [auth.third_party.firebase]
+# enabled = false
+# project_id = ""
 
 # Use Auth0 as a third-party provider alongside Supabase Auth.
-[auth.third_party.auth0]
-enabled = true
-# tenant = "my-auth0-tenant"
+# [auth.third_party.auth0]
+# enabled = false
+# tenant = ""
 # tenant_region = "us"
 
 # Use AWS Cognito (Amplify) as a third-party provider alongside Supabase Auth.
-[auth.third_party.aws_cognito]
-enabled = true
-# user_pool_id = "my-user-pool-id"
+# [auth.third_party.aws_cognito]
+# enabled = false
+# user_pool_id = ""
 # user_pool_region = "us-east-1"
 
 # Use Clerk as a third-party provider alongside Supabase Auth.
-[auth.third_party.clerk]
-enabled = true
-# Obtain from https://clerk.com/setup/supabase
-# domain = "example.clerk.accounts.dev"
+# [auth.third_party.clerk]
+# enabled = false
+# domain = ""
 
 # OAuth server configuration
 [auth.oauth_server]
