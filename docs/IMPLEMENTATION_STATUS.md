@@ -1,5 +1,7 @@
 # Meowku — Status Implementasi
 
+> **Status historis (Okt 2026). Untuk status terkini lihat docs/ROADMAP.md.**
+
 Tanggal audit: 24 Oktober 2026 (Asia/Jakarta)
 
 ## Push notification, profil, dan bahasa mobile — 27 Oktober 2026

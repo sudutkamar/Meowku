@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Household } from '../../lib/types';
 import { supabase } from '../../lib/supabase';
+import { toDatabaseError } from '../../lib/database-errors';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
@@ -46,18 +47,18 @@ export function MembersPage({ household, onNavigate }: { household: Household; o
   const [role, setRole] = useState<'admin' | 'member'>('member');
   const [search, setSearch] = useState('');
   const [confirmation, setConfirmation] = useState<{ kind: 'role' | 'remove'; userId: string; nextRole?: 'admin' | 'member' } | { kind: 'invitation'; invitationId: string; email: string } | null>(null);
-  const access = useQuery({ queryKey: ['household-access', household.id], queryFn: async () => { if (!supabase) throw new Error('Supabase belum dikonfigurasi.'); const { data, error } = await supabase.rpc('household_access', { requested_household_id: household.id }); if (error) throw error; return data?.[0] ?? null; } });
+  const access = useQuery({ queryKey: ['household-access', household.id], queryFn: async () => { if (!supabase) throw new Error('Supabase belum dikonfigurasi.'); const { data, error } = await supabase.rpc('household_access', { requested_household_id: household.id }); if (error) throw toDatabaseError(error); return data?.[0] ?? null; } });
   const members = useQuery({ queryKey: ['members', household.id], queryFn: async (): Promise<MemberRow[]> => {
     if (!supabase) throw new Error('Supabase belum dikonfigurasi.');
     const { data: rows, error } = await supabase.from('household_members').select('user_id, role, is_active, joined_at').eq('household_id', household.id).eq('is_active', true).order('joined_at');
-    if (error) throw error;
+    if (error) throw toDatabaseError(error);
     const ids = (rows ?? []).map((row) => row.user_id);
     const { data: profiles, error: profileError } = ids.length ? await supabase.from('profiles').select('id, full_name, avatar_url').in('id', ids) : { data: [], error: null };
-    if (profileError) throw profileError;
+    if (profileError) throw toDatabaseError(profileError);
     const profileMap = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
     return (rows ?? []).map((row) => { const profile = profileMap.get(row.user_id); return { ...row, role: row.role as MemberRole, full_name: displayName(profile), avatar_url: profile?.avatar_url ?? null }; });
   } });
-  const invitations = useQuery<PendingInvitation[]>({ queryKey: ['household-invitations', household.id], enabled: access.data?.can_manage_members === true, queryFn: async () => { if (!supabase) throw new Error('Supabase belum dikonfigurasi.'); const { data, error } = await supabase.from('household_invitations').select('id, email, role, status, created_at').eq('household_id', household.id).eq('status', 'pending').order('created_at', { ascending: false }); if (error) throw error; return (data ?? []) as PendingInvitation[]; } });
+  const invitations = useQuery<PendingInvitation[]>({ queryKey: ['household-invitations', household.id], enabled: access.data?.can_manage_members === true, queryFn: async () => { if (!supabase) throw new Error('Supabase belum dikonfigurasi.'); const { data, error } = await supabase.from('household_invitations').select('id, email, role, status, created_at').eq('household_id', household.id).eq('status', 'pending').order('created_at', { ascending: false }); if (error) throw toDatabaseError(error); return (data ?? []) as PendingInvitation[]; } });
   const invite = useMutation({ mutationFn: async () => {
     if (!supabase) throw new Error('Supabase belum dikonfigurasi.');
     const normalizedEmail = email.trim().toLowerCase();
@@ -74,9 +75,9 @@ export function MembersPage({ household, onNavigate }: { household: Household; o
   }, onError: async () => {
     await client.refetchQueries({ queryKey: ['household-invitations', household.id], type: 'active' });
   } });
-  const changeRole = useMutation({ mutationFn: async ({ userId, nextRole }: { userId: string; nextRole: 'admin' | 'member' }) => { if (!supabase) throw new Error('Supabase belum dikonfigurasi.'); const { error } = await supabase.rpc('manage_household_member', { target_household_id: household.id, target_user_id: userId, next_role: nextRole }); if (error) throw error; }, onSuccess: () => void client.invalidateQueries({ queryKey: ['members', household.id] }) });
-  const remove = useMutation({ mutationFn: async (userId: string) => { if (!supabase) throw new Error('Supabase belum dikonfigurasi.'); const { error } = await supabase.rpc('remove_household_member', { target_household_id: household.id, target_user_id: userId }); if (error) throw error; }, onSuccess: () => void client.invalidateQueries({ queryKey: ['members', household.id] }) });
-  const cancelInvitation = useMutation({ mutationFn: async (invitationId: string) => { if (!supabase) throw new Error('Supabase belum dikonfigurasi.'); const { error } = await supabase.rpc('cancel_household_invitation', { requested_invitation_id: invitationId }); if (error) throw error; }, onSuccess: () => void client.invalidateQueries({ queryKey: ['household-invitations', household.id] }) });
+  const changeRole = useMutation({ mutationFn: async ({ userId, nextRole }: { userId: string; nextRole: 'admin' | 'member' }) => { if (!supabase) throw new Error('Supabase belum dikonfigurasi.'); const { error } = await supabase.rpc('manage_household_member', { target_household_id: household.id, target_user_id: userId, next_role: nextRole }); if (error) throw toDatabaseError(error); }, onSuccess: () => void client.invalidateQueries({ queryKey: ['members', household.id] }) });
+  const remove = useMutation({ mutationFn: async (userId: string) => { if (!supabase) throw new Error('Supabase belum dikonfigurasi.'); const { error } = await supabase.rpc('remove_household_member', { target_household_id: household.id, target_user_id: userId }); if (error) throw toDatabaseError(error); }, onSuccess: () => void client.invalidateQueries({ queryKey: ['members', household.id] }) });
+  const cancelInvitation = useMutation({ mutationFn: async (invitationId: string) => { if (!supabase) throw new Error('Supabase belum dikonfigurasi.'); const { error } = await supabase.rpc('cancel_household_invitation', { requested_invitation_id: invitationId }); if (error) throw toDatabaseError(error); }, onSuccess: () => void client.invalidateQueries({ queryKey: ['household-invitations', household.id] }) });
   const filteredMembers = useMemo(() => { const needle = search.trim().toLowerCase(); if (!needle) return members.data ?? []; return (members.data ?? []).filter((member) => member.full_name.toLowerCase().includes(needle) || member.role.toLowerCase().includes(needle)); }, [members.data, search]);
   const mutationError = invite.error ?? changeRole.error ?? remove.error ?? cancelInvitation.error;
   const canManage = access.data?.can_manage_members === true;

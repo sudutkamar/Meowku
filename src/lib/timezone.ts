@@ -12,6 +12,8 @@ export function householdToday(timezone: string, now = new Date()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(now);
 }
 
+export const householdLocalDate = householdToday;
+
 export function shiftLocalDate(value: string, days: number) {
   const date = new Date(`${value}T12:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);

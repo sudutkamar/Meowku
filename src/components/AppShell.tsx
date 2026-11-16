@@ -25,7 +25,6 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import { GlobalSearch } from "./GlobalSearch";
 import { NotificationBell } from "./NotificationBell";
 import { UIPreferencesProvider, useUIPreferences } from "./UIPreferences";
-import { LanguageRuntime } from "./LanguageRuntime";
 import type { Household } from "../lib/types";
 import { supabase } from "../lib/supabase";
 import {
@@ -380,7 +379,6 @@ function ShellContent({
 export function AppShell(props: AppShellProps) {
   return (
     <UIPreferencesProvider>
-      <LanguageRuntime />
       <ShellContent {...props} />
     </UIPreferencesProvider>
   );

@@ -6,7 +6,8 @@ import { PageHeader } from '../../components/PageHeader';
 import { PageSkeleton } from '../../components/Skeleton';
 import { MascotBuddy } from '../../components/MascotBuddy';
 import { useCompleteOccurrence } from '../schedules/useSchedules';
-import { dashboardKey, useDashboard } from './useDashboard';
+import { dashboardQueryKey } from '../../lib/query-keys';
+import { useDashboard } from './useDashboard';
 
 function ageLabel(months: number) {
   if (months < 12) return `${months} bln`;
@@ -74,7 +75,7 @@ export function DashboardPage({ household, onNavigate, displayName }: { househol
 
   function retry() { void dashboard.refetch(); }
   function completeOccurrence(id: string) {
-    complete.mutate({ occurrenceId: id }, { onSuccess: () => client.invalidateQueries({ queryKey: dashboardKey(household.id) }) });
+    complete.mutate({ occurrenceId: id }, { onSuccess: () => client.invalidateQueries({ queryKey: dashboardQueryKey(household.id, timezone) }) });
   }
 
   if (dashboard.isLoading) return <PageSkeleton variant="dashboard" />;

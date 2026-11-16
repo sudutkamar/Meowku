@@ -5,7 +5,7 @@ function normalizeOrigin(value: string) {
 }
 
 const configuredOrigins = (Deno.env.get('APP_ORIGIN') ?? '').split(',').map((origin) => normalizeOrigin(origin.trim())).filter(Boolean);
-const allowedOrigins = new Set(['http://localhost:5173', 'http://127.0.0.1:5173', 'https://meowku.panda-12b.workers.dev', ...configuredOrigins]);
+const allowedOrigins = new Set(['http://localhost:5173', 'http://127.0.0.1:5173', ...configuredOrigins]);
 const headers = (request: Request) => ({
   'Access-Control-Allow-Origin': allowedOrigins.has(normalizeOrigin(request.headers.get('Origin') ?? '')) ? normalizeOrigin(request.headers.get('Origin') ?? '') : 'http://127.0.0.1:5173',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -90,17 +90,11 @@ Deno.serve(async (request) => {
     if (details.status !== 'pending') return reply(request, { error: 'Undangan ini sudah diproses.' }, 409);
 
     if (body.action === 'accept') {
-      const { data: existingMember, error: existingMemberError } = await admin.from('household_members').select('role').eq('household_id', details.household_id).eq('user_id', auth.user.id).maybeSingle();
-      if (existingMemberError) throw existingMemberError;
-      const role = existingMember?.role === 'owner' ? 'owner' : details.role;
-      const { error: memberError } = await admin.from('household_members').upsert({ household_id: details.household_id, user_id: auth.user.id, role, is_active: true }, { onConflict: 'household_id,user_id' });
-      if (memberError) throw memberError;
-      const { error: invitationError } = await admin.from('household_invitations').update({ status: 'accepted' }).eq('id', details.id).eq('status', 'pending');
-      if (invitationError) throw invitationError;
-      const { error: auditError } = await admin.from('audit_events').insert({ household_id: details.household_id, actor_id: auth.user.id, action: 'invitation_accepted', entity_type: 'household_invitation', entity_id: details.id, metadata: { email: details.email, role: details.role } });
-      if (auditError) throw auditError;
-      const { data: household, error: householdError } = await admin.from('households').select('*').eq('id', details.household_id).single();
-      if (householdError) throw householdError;
+      // Acceptance runs as the caller through the canonical RPC so membership
+      // upsert, invitation status flip, and audit write commit atomically and
+      // cannot race a decline.
+      const { data: household, error: acceptError } = await userClient.rpc('accept_household_invitation', { requested_invitation_id: body.invitationId });
+      if (acceptError) throw acceptError;
       return reply(request, { household });
     }
 

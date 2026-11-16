@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 
 test('production configuration exists', () => {
-  assert.equal(existsSync('vercel.json'), true);
+  assert.equal(existsSync('wrangler.jsonc'), true);
+  const wranglerConfig = readFileSync('wrangler.jsonc', 'utf8');
+  assert.match(wranglerConfig, /"not_found_handling":\s*"single-page-application"/);
   assert.equal(existsSync('supabase/migrations/20261024000100_initial.sql'), true);
   assert.equal(existsSync('supabase/migrations/20261024000200_admin_policies.sql'), true);
 });

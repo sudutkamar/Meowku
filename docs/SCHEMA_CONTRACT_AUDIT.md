@@ -1,5 +1,7 @@
 # Schema Contract Audit
 
+> **Catatan status:** dokumen historis. Klaim "checkout tidak memiliki `supabase/config.toml`" sudah usang — file `supabase/config.toml` sekarang ada di repo. Pernyataan lain tetap relevan sebagai rekam audit tanggal berjalan.
+
 Tanggal: 24 Oktober 2026 (Asia/Jakarta)
 
 ## Temuan

@@ -1,0 +1,133 @@
+/* Meowku design tokens — single source of truth for color, radius, shadow,
+   spacing, and type. Dark theme overrides these tokens on :root[data-theme="dark"],
+   so feature files only ever reference tokens. */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Surfaces */
+  --color-bg: #fffaf5;
+  --color-surface: #fffdfb;
+  --color-panel: rgba(255, 255, 255, .9);
+  --color-surface-alt: #fffaf5;
+  --color-sidebar-from: #fffdf9;
+  --color-sidebar-to: #fff6ed;
+  --color-header: rgba(255, 253, 251, .84);
+  --color-peach: #fff0e2;
+  --color-peach-soft: #fff4e9;
+
+  /* Text */
+  --color-ink: #332720;
+  --color-heading: #101828;
+  --color-text: #344054;
+  --color-muted: #667085;
+  --color-muted-2: #98a2b3;
+
+  /* Brand (orange) */
+  --color-brand: #ff7417;
+  --color-brand-soft: #ff9b5b;
+  /* Small orange text below ~16px uses brand-strong for contrast. */
+  --color-accent-text: #c64d0a;
+  --color-on-brand: #fff;
+
+  /* Lines and fields */
+  --color-line: #efdfd2;
+  --color-line-strong: #eadfd5;
+  --color-field: #fff;
+  --color-field-border: #e2dcd5;
+
+  /* Status */
+  --color-danger: #b42318;
+  --color-danger-bg: #fff0ed;
+  --color-success: #16a765;
+  --color-success-bg: #eafbf2;
+  --color-warning: #b26a00;
+  --color-warning-bg: #fff5db;
+  --color-info: #2c9dcc;
+  --color-info-bg: #eaf7ff;
+  --color-neutral-bg: #f2f4f7;
+  --color-neutral-text: #475467;
+
+  /* Radius scale (13 / 17 / 22 px legacy values, plus pill) */
+  --radius-xs: 9px;
+  --radius-sm: 13px;
+  --radius-md: 17px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-soft: 0 14px 34px rgba(91, 49, 24, .065);
+  --shadow-card: 0 10px 28px rgba(91, 49, 24, .045);
+  --shadow-pop: 0 18px 45px rgba(44, 31, 18, .14);
+  --shadow-brand: 0 8px 15px rgba(241, 94, 16, .2);
+  --shadow-overlay: 0 20px 70px rgba(44, 31, 18, .18);
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --layout-sidebar: 258px;
+  --layout-content-max: 1480px;
+  --layout-gutter: clamp(16px, 3.2vw, 44px);
+  --layout-section-gap: clamp(16px, 2vw, 26px);
+  --meowku-page-inline: clamp(10px, 2.4vw, 32px);
+  --meowku-section-gap: clamp(12px, 1.8vw, 22px);
+  --meowku-card-radius: clamp(16px, 1.8vw, 24px);
+
+  /* Typography */
+  --font-sans: 'DM Sans', sans-serif;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 28px;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #1d1916;
+  --color-surface: #2a231f;
+  --color-panel: rgba(42, 35, 31, .94);
+  --color-surface-alt: #352b25;
+  --color-sidebar-from: #2b241f;
+  --color-sidebar-to: #211c19;
+  --color-header: rgba(36, 31, 27, .88);
+  --color-peach: #57301d;
+  --color-peach-soft: #42291f;
+
+  --color-ink: #fff6ef;
+  --color-heading: #fff6ef;
+  --color-text: #f9eee5;
+  --color-muted: #d5c2b2;
+  --color-muted-2: #9c897b;
+
+  --color-brand: #ff7417;
+  --color-brand-soft: #ffad79;
+  --color-accent-text: #ffbd91;
+
+  --color-line: #49372c;
+  --color-line-strong: #59483b;
+  --color-field: #211c19;
+  --color-field-border: #59483b;
+
+  --color-danger: #ff9f79;
+  --color-danger-bg: #542c27;
+  --color-success: #6ee7ad;
+  --color-success-bg: #1f4938;
+  --color-warning: #ffbd62;
+  --color-warning-bg: #503d20;
+
+  --shadow-soft: 0 14px 34px rgba(0, 0, 0, .14);
+  --shadow-card: 0 12px 30px rgba(0, 0, 0, .14);
+  --shadow-pop: 0 18px 45px rgba(0, 0, 0, .3);
+  --shadow-overlay: 0 20px 70px rgba(0, 0, 0, .3);
+}

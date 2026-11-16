@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+  supabase-local:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Local integration test
+        run: npm run test:local
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for e2e specs and Playwright config
+        id: spec-check
+        run: |
+          has_specs=false
+          has_config=false
+          if compgen -G "tests/e2e/*.spec.ts" > /dev/null; then has_specs=true; fi
+          if [ -f playwright.config.ts ] || [ -f playwright.config.mts ] || [ -f playwright.config.js ]; then has_config=true; fi
+          echo "has_specs=$has_specs" >> "$GITHUB_OUTPUT"
+          echo "has_config=$has_config" >> "$GITHUB_OUTPUT"
+
+      - if: steps.spec-check.outputs.has_specs == 'true' && steps.spec-check.outputs.has_config == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - if: steps.spec-check.outputs.has_specs == 'true' && steps.spec-check.outputs.has_config == 'true'
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - if: steps.spec-check.outputs.has_specs == 'true' && steps.spec-check.outputs.has_config == 'true'
+        name: Install dependencies
+        run: npm ci
+
+      - if: steps.spec-check.outputs.has_specs == 'true' && steps.spec-check.outputs.has_config == 'true'
+        name: Install Playwright chromium
+        run: npx playwright install --with-deps chromium
+
+      - if: steps.spec-check.outputs.has_specs == 'true' && steps.spec-check.outputs.has_config == 'true'
+        name: Start local Supabase
+        run: supabase start
+
+      - if: steps.spec-check.outputs.has_specs == 'true' && steps.spec-check.outputs.has_config == 'true'
+        name: Start dev server
+        run: |
+          npm run dev &
+          npx wait-on http://localhost:5173
+
+      - if: steps.spec-check.outputs.has_specs == 'true' && steps.spec-check.outputs.has_config == 'true'
+        name: Run Playwright
+        run: npx playwright test

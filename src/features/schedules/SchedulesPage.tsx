@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { Household } from '../../lib/types';
 import { supabase } from '../../lib/supabase';
-import { householdLocalDate } from '../dashboard/useDashboard';
+import { householdLocalDate } from '../../lib/timezone';
 import {
   useArchiveOccurrence, useArchiveSchedule, useCompleteOccurrence, useCreateSchedule, useDeleteSchedule,
   usePauseSchedule, useRestoreSchedule, useResumeSchedule, useScheduleOccurrences, useScheduleTargetOptions, useSchedules, useUpdateSchedule,

@@ -144,9 +144,13 @@ test('invitation flow has a server fallback when production RPCs are missing fro
   assert.match(hook, /functions\.invoke\('household-invitation'/);
   assert.match(fallback, /auth\.getUser/);
   assert.match(fallback, /household_invitations/);
-  assert.match(fallback, /invitation_accepted/);
+  // Acceptance delegates to the canonical RPC run with the caller's JWT so the
+  // membership upsert, status flip, and audit write commit atomically.
+  assert.match(fallback, /accept_household_invitation/);
   assert.match(fallback, /invitation_declined/);
   assert.match(fallback, /lowerCase|toLowerCase/);
+  const acceptanceRpc = read('supabase/migrations/20261029000300_explicit_household_invitation_acceptance.sql');
+  assert.match(acceptanceRpc, /invitation_accepted/);
   assert.match(management, /invitation-card\{box-sizing:border-box;width:min\(520px,100%\)/);
   assert.match(management, /invitation-card \.invitation-actions button\{display:flex/);
   assert.match(management, /@media\(max-width:520px\).*invitation-actions\{grid-template-columns:minmax\(0,1fr\)/s);

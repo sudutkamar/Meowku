@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { householdLocalDate } from '../dashboard/useDashboard';
+import { toDatabaseError } from '../../lib/database-errors';
+import { dashboardQueryKey } from '../../lib/query-keys';
+import { householdLocalDate } from '../../lib/timezone';
 import { validateSchedule } from './scheduleForm';
 
 export type ScheduleStatus = 'active' | 'paused' | 'archived';
@@ -98,20 +100,23 @@ async function householdTargets(householdId: string): Promise<TargetOptions> {
     supabase.from('cats').select('id, name').eq('household_id', householdId).eq('is_active', true).order('name'),
     supabase.from('litter_boxes').select('id, name').eq('household_id', householdId).eq('is_active', true).order('name'),
   ]);
-  if (cats.error) throw cats.error;
-  if (litterBoxes.error) throw litterBoxes.error;
+  if (cats.error) throw toDatabaseError(cats.error);
+  if (litterBoxes.error) throw toDatabaseError(litterBoxes.error);
   return { cats: cats.data ?? [], litterBoxes: litterBoxes.data ?? [] };
 }
 
 async function hydratedSchedules(householdId: string): Promise<ScheduleRecord[]> {
   if (!supabase) throw new Error('Supabase belum dikonfigurasi.');
-  const [schedules, slots, targets] = await Promise.all([
-    supabase.from('schedules').select('*').eq('household_id', householdId).order('start_date'),
-    supabase.from('schedule_slots').select('*').order('sort_order'),
-    supabase.from('schedule_targets').select('*').order('target_key'),
+  const schedules = await supabase.from('schedules').select('*').eq('household_id', householdId).order('start_date');
+  if (schedules.error) throw toDatabaseError(schedules.error);
+  const scheduleIds = (schedules.data ?? []).map((schedule) => schedule.id);
+  if (!scheduleIds.length) return [];
+  const [slots, targets] = await Promise.all([
+    supabase.from('schedule_slots').select('*').in('schedule_id', scheduleIds).order('sort_order'),
+    supabase.from('schedule_targets').select('*').in('schedule_id', scheduleIds).order('target_key'),
   ]);
-  const failed = [schedules, slots, targets].find((result) => result.error);
-  if (failed?.error) throw failed.error;
+  const failed = [slots, targets].find((result) => result.error);
+  if (failed?.error) throw toDatabaseError(failed.error);
   const slotRows = slots.data ?? [];
   const targetRows = targets.data ?? [];
   return (schedules.data ?? []).map((schedule) => {
@@ -159,7 +164,7 @@ export function useScheduleOccurrences(householdId: string | undefined, timezone
         range_start: range.from,
         range_end: range.to,
       });
-      if (generationError) throw generationError;
+      if (generationError) throw toDatabaseError(generationError);
       // Sumber kebenaran tunggal: occurrence yg sudah disimpan di database.
       // Assignee dinamis dihitung di SQL; jangan fallback ke query client atau
       // preview sintetis karena akan menyimpang dari histori/RLS.
@@ -168,7 +173,7 @@ export function useScheduleOccurrences(householdId: string | undefined, timezone
         from_date: range.from,
         to_date: range.to,
       });
-      if (dynamicError) throw dynamicError;
+      if (dynamicError) throw toDatabaseError(dynamicError);
       if (!Array.isArray(dynamic)) throw new Error('Respons jadwal tidak valid.');
       return dynamic as unknown as ScheduleOccurrence[];
     },
@@ -182,11 +187,11 @@ export function useScheduleMembers(householdId?: string) {
     queryFn: async (): Promise<ScheduleMember[]> => {
       if (!supabase || !householdId) throw new Error('Household belum tersedia.');
       const { data: members, error: memberError } = await supabase.from('household_members').select('user_id, role').eq('household_id', householdId).eq('is_active', true);
-      if (memberError) throw memberError;
+      if (memberError) throw toDatabaseError(memberError);
       const ids = (members ?? []).map((member) => member.user_id);
       if (!ids.length) return [];
       const { data: profiles, error: profileError } = await supabase.from('profiles').select('id, full_name').in('id', ids);
-      if (profileError) throw profileError;
+      if (profileError) throw toDatabaseError(profileError);
       const names = new Map((profiles ?? []).map((profile) => [profile.id, profile.full_name]));
       return (members ?? []).map((member) => ({ user_id: member.user_id, role: member.role as ScheduleMember['role'], full_name: names.get(member.user_id) ?? null }));
     },
@@ -200,7 +205,7 @@ export function useTodayOccurrences(householdId?: string, timezone = 'Asia/Jakar
 function invalidateScheduleQueries(client: ReturnType<typeof useQueryClient>, householdId?: string) {
   void client.invalidateQueries({ queryKey: schedulesKey(householdId) });
   void client.invalidateQueries({ queryKey: ['schedule-occurrences', householdId] });
-  void client.invalidateQueries({ queryKey: ['dashboard', householdId] });
+  void client.invalidateQueries({ queryKey: dashboardQueryKey(householdId) });
 }
 
 export function useCreateSchedule(householdId?: string) {

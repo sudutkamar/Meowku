@@ -233,7 +233,8 @@ async function main() {
   assert(completedRows.find((row) => row.id === overrideOccurrence.id)?.household_assignees?.display_name === 'QA Viewer', 'manual override must remain effective after completion');
   assert(Boolean(completedRows.find((row) => row.id === overrideOccurrence.id)?.completed_at), 'completion must persist while manual override is active');
 
-  await result('member uncompletes tomorrow occurrence', member.rpc('uncomplete_occurrence', { occurrence_id: overrideOccurrence.id }));
+  await expectedError('non-completing member cannot uncomplete', viewer.rpc('uncomplete_occurrence', { occurrence_id: overrideOccurrence.id }), 'uncomplete_not_authorized');
+  await result('member uncompletes own completion', member.rpc('uncomplete_occurrence', { occurrence_id: overrideOccurrence.id }));
   const uncompleted = await result('read uncompleted occurrence', owner.from('schedule_occurrences').select('completed_at,completed_by').eq('id', overrideOccurrence.id).single());
   assert(uncompleted.completed_at === null && uncompleted.completed_by === null, 'uncomplete must clear completion audit marker');
 
@@ -275,6 +276,25 @@ async function main() {
   const memberCatalog = await result('member reads catalog', member.from('catalog_items').select('id,name').eq('id', catalogItem.id).single());
   assert(memberCatalog.id === catalogItem.id, 'member must read household catalog data');
   await expectedError('member cannot update catalog', member.from('catalog_items').update({ minimum_stock: 99 }).eq('id', catalogItem.id).select().single());
+
+  await result('member updates own profile display fields', member.from('profiles').update({ full_name: 'QA Member Renamed' }).eq('id', memberId).select('id,full_name').single());
+  await expectedError('member cannot update own profile role', member.from('profiles').update({ role: 'admin' }).eq('id', memberId).select('id,role').single(), 'permission denied');
+
+  const memberExpense = await result('member records an expense', member.from('cat_expenses').insert({
+    household_id: householdId,
+    cat_id: homeCat.id,
+    category: 'food',
+    amount: 25000,
+    currency: 'IDR',
+    spent_at: startDate,
+  }).select().single());
+  await expectedError('other member cannot update a record it did not create', viewer.from('cat_expenses').update({ amount: 999999 }).eq('id', memberExpense.id).select().single());
+  await expectedError('other member cannot delete a record it did not create', viewer.from('cat_expenses').delete().eq('id', memberExpense.id).select().single());
+  const ownerEditedExpense = await result('owner admin can update any household record', owner.from('cat_expenses').update({ amount: 30000 }).eq('id', memberExpense.id).select('amount').single());
+  assert(Number(ownerEditedExpense.amount) === 30000, 'owner/admin must manage household records created by members');
+  await result('creator can delete own record', member.from('cat_expenses').delete().eq('id', memberExpense.id).select().single());
+  const deletedExpense = await result('verify creator delete persisted', owner.from('cat_expenses').select('id').eq('id', memberExpense.id).maybeSingle());
+  assert(deletedExpense === null, 'creator delete must remove the record');
 
   const endDate = localDatePlus(3, 'Asia/Jakarta');
   const schedule = await result('owner creates daily schedule', owner.rpc('create_schedule', {

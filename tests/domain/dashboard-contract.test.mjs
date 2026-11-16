@@ -21,7 +21,7 @@ test('dashboard has a dedicated page and household-scoped query hook', () => {
 
 test('dashboard derives today from household timezone and computes completion from rows', () => {
   const hook = read('src/features/dashboard/useDashboard.ts');
-  assert.match(hook, /timeZone: timezone/);
+  assert.match(hook, /timeZone: timezone|householdToday\(timezone\)/);
   assert.match(hook, /completed_at/);
   assert.match(hook, /completedToday/);
   assert.match(hook, /totalToday/);

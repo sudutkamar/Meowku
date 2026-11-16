@@ -19,6 +19,7 @@
 - `npm run build` ✅ PASS
 - `node scripts/local-integration.mjs` (DB lokal fresh) ✅ PASS — 17 checks: RLS isolation, capabilities, dynamic rotation, ad-hoc override, uncomplete, cross-household rejection
 - `npx wrangler deploy` ✅ PASS → https://meowku.panda-12b.workers.dev
+  > **Konteks (16 Nov 2026):** deploy ini terjadi satu kali. Sesuai AGENTS.md rule 11, default adalah localhost-only; deploy lanjutan ke internet memerlukan persetujuan owner. Keputusan origin logo email terkait: template email (`supabase/templates/*.html`) kini memakai URL logo statis `https://meowku.panda-12b.workers.dev/UI/Meowku_Logo_Kucing_Jam_Transparent.png` (logo tidak diubah, hanya URL-nya) dengan komentar TODO untuk disesuaikan `APP_ORIGIN` sebelum deploy berikutnya.
 - Migrasi DB di-push ke remote ✅ (`20261105000100`, `20261106000100`, `20261106000200`, `20261106000300`)
 
 ## Belum tuntas / roadmap fase berikutnya

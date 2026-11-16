@@ -3,7 +3,7 @@ import { CalendarDays, CheckCircle2, ChevronDown, Clock3 } from 'lucide-react';
 import type { Household } from '../../lib/types';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
-import { householdLocalDate } from '../dashboard/useDashboard';
+import { householdLocalDate } from '../../lib/timezone';
 import { useCompleteOccurrence, useScheduleMembers, useScheduleOccurrences, useScheduleTargetOptions, type OccurrenceFilter, type ScheduleOccurrence } from '../schedules/useSchedules';
 
 const filters: Array<{ value: OccurrenceFilter; label: string }> = [{ value: 'Today', label: 'Hari ini' }, { value: 'Tomorrow', label: 'Besok' }, { value: 'This Week', label: 'Minggu ini' }, { value: 'This Month', label: 'Bulan ini' }];

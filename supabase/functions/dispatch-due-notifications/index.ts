@@ -4,12 +4,27 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-dispatch-secret' };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
+// Constant-time secret comparison: accumulate XOR over every byte so the
+// response time does not leak the matched prefix. Length differences still
+// fail closed after scanning a fixed-size chunk.
+function secretMatches(provided: string | null, expected: string): boolean {
+  if (!provided) return false;
+  const a = new TextEncoder().encode(provided);
+  const b = new TextEncoder().encode(expected);
+  let mismatch = a.length ^ b.length;
+  const limit = Math.max(a.length, b.length);
+  for (let index = 0; index < limit; index += 1) {
+    mismatch |= (a[index] ?? 0) ^ (b[index] ?? 0);
+  }
+  return mismatch === 0;
+}
+
 type Occurrence = { id: string; household_id: string; scheduled_at: string; target_key: string; schedules: { title: string; is_active: boolean; status: string } | null; schedule_slots: { label: string; is_active: boolean } | null };
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
-  if (request.headers.get('x-dispatch-secret') !== Deno.env.get('NOTIFICATION_DISPATCH_SECRET')) return json({ error: 'Forbidden' }, 403);
+  if (!secretMatches(request.headers.get('x-dispatch-secret'), Deno.env.get('NOTIFICATION_DISPATCH_SECRET') ?? '')) return json({ error: 'Forbidden' }, 403);
   const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
   const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
   const vapidSubject = Deno.env.get('VAPID_SUBJECT');

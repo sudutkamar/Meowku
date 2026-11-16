@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { queryKeys } from '../../lib/query-keys';
+import { dashboardQueryKey } from '../../lib/query-keys';
+import { toDatabaseError } from '../../lib/database-errors';
 import { householdToday } from '../../lib/timezone';
 
 export type DashboardOccurrence = {
@@ -31,22 +32,18 @@ export type DashboardData = {
 
 export const dashboardKey = (householdId?: string) => ['household', householdId, 'dashboard'];
 
-export function householdLocalDate(timezone: string, now = new Date()) {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(now);
-}
-
 export function useDashboard(householdId?: string, timezone = 'Asia/Jakarta') {
   return useQuery({
-    queryKey: householdId ? queryKeys.dashboard(householdId, timezone) : ['household', 'missing', 'dashboard', timezone], enabled: Boolean(supabase && householdId),
+    queryKey: dashboardQueryKey(householdId, timezone), enabled: Boolean(supabase && householdId),
     queryFn: async (): Promise<DashboardData> => {
       if (!supabase || !householdId) throw new Error('Household belum tersedia.');
-      const today = householdLocalDate(timezone);
+      const today = householdToday(timezone);
       const { error: generationError } = await supabase.rpc('generate_schedule_occurrences', {
         requested_household_id: householdId,
         range_start: today,
         range_end: today,
       });
-      if (generationError) throw generationError;
+      if (generationError) throw toDatabaseError(generationError);
       const [cats, litterBoxes, schedules, occurrences, targets, vaccinations, activity] = await Promise.all([
         supabase.from('cats').select('id, name, age_months, breed, photo_url').eq('household_id', householdId).eq('is_active', true).order('name'),
         supabase.from('litter_boxes').select('id, name, status, location').eq('household_id', householdId).eq('is_active', true).order('name'),
@@ -58,7 +55,7 @@ export function useDashboard(householdId?: string, timezone = 'Asia/Jakarta') {
         supabase.from('audit_events').select('id, action, entity_type, actor_id, created_at').eq('household_id', householdId).order('created_at', { ascending: false }).limit(4),
       ]);
       const failed = [cats, litterBoxes, schedules, occurrences, targets, vaccinations, activity].find((result) => result.error);
-      if (failed?.error) throw failed.error;
+      if (failed?.error) throw toDatabaseError(failed.error);
       const catMap = new Map((cats.data ?? []).map((cat) => [cat.id, cat.name]));
       const boxMap = new Map((litterBoxes.data ?? []).map((box) => [box.id, box.name]));
       const targetMap = new Map((targets.data ?? []).map((target) => [target.target_key, target.cat_id ? catMap.get(target.cat_id) ?? 'Kucing' : target.litter_box_id ? boxMap.get(target.litter_box_id) ?? 'Litter box' : 'Household']));

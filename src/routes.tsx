@@ -82,10 +82,6 @@ function AdminOnlyRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-function HouseholdPage({ children }: { children: ReactNode }) {
-  return <>{children}</>;
-}
-
 function RootLanding() {
   const navigate = useNavigate();
   useEffect(() => { void navigate({ to: '/app' }); }, [navigate]);
