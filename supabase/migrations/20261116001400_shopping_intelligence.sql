@@ -11,6 +11,6 @@ create table if not exists household_shopping_list (
 );
 alter table household_shopping_list enable row level security;
 create policy hsl_read on household_shopping_list for select using (is_household_member(household_id));
-create policy hsl_write on household_shopping_list for all using (is_household_admin(household_id)) with check (is_household_admin(household_id));
+create policy hsl_write on household_shopping_list for all using (household_role(household_id) in ('owner','admin')) with check (household_role(household_id) in ('owner','admin'));
 create or replace function compute_consumption_rate(p_household_id uuid) returns jsonb language sql security definer set search_path=public as $$ select jsonb_build_object('ok',true); $$;
 create or replace function refresh_shopping_list(p_household_id uuid) returns jsonb language sql security definer set search_path=public as $$ select jsonb_build_object('ok',true); $$;

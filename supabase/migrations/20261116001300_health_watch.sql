@@ -5,5 +5,7 @@ language sql
 security definer
 set search_path = public
 as $$
-  select jsonb_build_object('ok', true);
+  select case when is_household_member(p_household_id)
+    then jsonb_build_object('ok', true, 'flags', '[]'::jsonb)
+    else jsonb_build_object('error', 'household_access_denied') end;
 $$;
