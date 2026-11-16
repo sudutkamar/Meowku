@@ -1,4 +1,4 @@
-﻿-- CHECK role
+-- CHECK role
 alter table public.household_members
   drop constraint if exists household_members_role_check;
 alter table public.household_members

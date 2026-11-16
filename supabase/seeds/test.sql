@@ -1,2 +1,2 @@
-﻿-- schema smoke only, no fictitious app data
+-- schema smoke only, no fictitious app data
 select 1;

@@ -1,4 +1,4 @@
-﻿do $$
+do $$
 begin
   create extension if not exists pg_cron;
 exception when others then

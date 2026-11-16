@@ -1,4 +1,4 @@
-﻿-- FK indexes (audit)
+-- FK indexes (audit)
 create index if not exists notifications_occurrence_id_idx on public.notifications (occurrence_id);
 create index if not exists notifications_household_id_idx on public.notifications (household_id);
 create index if not exists cat_attachments_cat_id_idx on public.cat_attachments (cat_id);

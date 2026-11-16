@@ -1,4 +1,4 @@
-﻿create or replace function public.household_local_date(household_id uuid)
+create or replace function public.household_local_date(household_id uuid)
 returns date
 language sql
 security definer
